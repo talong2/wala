@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@inject DialogService DialogService
+<RadzenLayout>
+    <RadzenComponents />
+    <RadzenHeader>
+        <RadzenTheme Theme="material-dark"></RadzenTheme>
+        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" style="background-color: #333333">
+            <!-- Left Stack -->
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="-25px">
+                <img src="https://agusandelsur.gov.ph/wp-content/uploads/2023/03/Agusan-del-Sur-Logo.png"
+                     style="width: 45px; height: 45px; border-radius: 50%; margin-right: 10px; margin-left: 15%" />
+                <RadzenText style="font-family: 'Poppins', sans-serif; font-size: 25px; font-weight: bold; color: #F5F5F5; margin-top: 5px ">
+                    SLMS
+                </RadzenText>
+            </RadzenStack>
+
+            <!-- Right Stack -->
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="5px">
+                <RadzenAppearanceToggle />
+                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Icon="format_paint" />
+                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Icon="account_circle" />
+            </RadzenStack>
+        </RadzenStack>
+
+
+    </RadzenHeader>
+    <RadzenSidebar @bind-Expanded="@sidebar1Expanded">
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="10px"
+                     Style="padding: 20px; text-align: center;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc3NJHNPn-anL_-RnXpC86YqtTr_zqC6FTWg&s" alt="User Picture" class="user-picture rounded-circle"
+                 style="width: 150px; height: 150px;" />
+            <RadzenLabel Text="User" Style="font-weight: bold; font-size: 18px;" />
+        </RadzenStack>
+        <div class="rz-p-4">
+            <NavMenu />
+        </div>
+    </RadzenSidebar>
+    <RadzenBody>
+        <div class="rz-p-4">
+            @Body
+        </div>
+    </RadzenBody>
+
+</RadzenLayout>
+
+@code {
+    bool sidebar1Expanded = true;
+}
