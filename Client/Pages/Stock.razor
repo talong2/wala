@@ -1,5 +1,6 @@
-﻿@page "/stockcard"
+﻿@page "/"
 @using PPDIS.Shared.Models
+
 @inject IJSRuntime JS
 @inject HttpClient Http
 
@@ -129,6 +130,9 @@
 
 
 
+
+
+
 @code {
     private List<StockCardData> stock_list = new();
     private List<StockCardData> FilteredEntries = new();
@@ -229,7 +233,7 @@
             return;
         }
 
-        await JS.InvokeVoidAsync("printStockCard", new
+        await JS.InvokeVoidAsync("window.printStockCard", new
         {
             entries = firstStock.entries.Select(e => new
             {
@@ -252,3 +256,10 @@
     }
 
 }
+
+
+
+
+
+
+

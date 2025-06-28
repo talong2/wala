@@ -3,7 +3,6 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using PPDIS.Server.Services;
-using PPDIS.Server.Services.ApplicantLayer;
 using PPDIS.Shared;
 using PPDIS.Shared.Models;
 
@@ -14,7 +13,7 @@ namespace Myproject.Server.Controllers;
 public class TaskController : ControllerBase
 {
     private readonly IMongoDBService _taskService;
-    private readonly IApplicantLayer _applicant;
+
     private readonly IConfiguration _config;
 
     public TaskController(IMongoDBService taskService, IConfiguration config)
@@ -23,13 +22,6 @@ public class TaskController : ControllerBase
         _config = config;
     }
 
-    [HttpPost("Insert")]
-    public async Task<IActionResult> CreateClient( Taskclass task)
-    {
-        await _taskService.InsertClient(task);
-        return Ok("ok");
-    }
-    
     
     
     [HttpPost("InsertStock")]
@@ -39,64 +31,13 @@ public class TaskController : ControllerBase
         await _taskService.InsertStock(stock);
         return Ok("ok");
     }
-    
-
-    [HttpGet("ViewData")]
-    public async Task<ActionResult<List<Taskclass>>> GetClient()
-    {
-        var result = await _taskService.GetClients();
-        return Ok(result);
-    }
-    
-    [HttpGet("ViewProverty")]
-    public async Task<ActionResult<List<PovertyClass>>> GetProverty()
-    {
-        var result = await _taskService.GetProverty();
-        return Ok(result);
-    }
-
-    [HttpGet("ViewMunicipality")]
-    public async Task<ActionResult<List<PovertyClass>>> GetMunicipality()
-    {
-        var result = await _taskService.GetMunicipality();
-        return Ok(result);
-    }
-    
-    
-    [HttpGet("ViewChart")]
-    public async Task<ActionResult<List<ChartClass>>> GetChart()
-    {
-        var result = await _taskService.GetChart();
-        return Ok(result);
-    }
-    
-    [HttpGet("View")]
-    public async Task<ActionResult<List<Examinee>>> ViewExam()
-    {
-        var result = await _taskService.GetExam();
-        return Ok(result);
-    }
-    
+  
     
     [HttpGet("ViewStock")]
     public async Task<ActionResult<List<StockCardData>>> ViewStock()
     {
         var result = await _taskService.GetStock();
         return Ok(result);
-    }
-    
-    [HttpDelete("tasks3/{id}")]
-    public async Task<IActionResult> DeleteTask(string id)
-    {
-        await _taskService.DeleteTask(id);
-        return Ok("ok");
-    }
-
-    [HttpPost("Update")]
-    public async Task<IActionResult> UpdateClient( Taskclass task)
-    {
-        await _taskService.UpdateClient(task);
-        return Ok("ok");
     }
     
     
