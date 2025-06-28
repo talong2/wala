@@ -1,40 +1,50 @@
 ﻿@page "/"
 @using PPDIS.Shared.Models
-
 @inject IJSRuntime JS
 @inject HttpClient Http
-
-
-
-
 
 <!-- 🔼 Stock Form Section -->
 <div class="col-lg-12 col-xl-12 col-sm-12 d-flex mb-4">
     <div class="card p-4 w-100 shadow-sm border-0 bg-light rounded-4 mb-4" style="min-height: 300px;">
-        <StockForm />
+        <StockForm/>
     </div>
 </div>
 
 <section class="section dashboard">
-    <div class="row g-4"> <!-- No alignment class -->
+    <div class="row g-4">
 
         <!-- 🔍 Left Panel -->
         <div class="col-lg-4 col-xl-4 col-sm-12 d-flex">
             <div class="card w-100 p-4 shadow-sm border-0 rounded-4 bg-white mb-4" style="height: 700px;">
                 <div class="d-flex flex-column h-100">
-                    <!-- Header -->
-                    <div class="mb-3 text-center">
-                        <h5 class="fw-bold text-primary">📅 Filter Month-Year</h5>
+
+                    <!-- Header + Refresh Button -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="flex-grow-1 text-center">
+                            <h5 class="fw-bold text-primary m-0">📅 Filter Month-Year</h5>
+                        </div>
+
+                        <button class="btn btn-outline-primary shadow-sm d-flex align-items-center gap-1 px-3 py-1 rounded-pill"
+                                title="Refresh Data"
+                                @onclick="RefreshData"
+                                disabled="@isRefreshing"
+                                style="transition: transform 0.2s ease;"
+                                onmouseover="this.style.transform='rotate(3deg)'"
+                                onmouseout="this.style.transform='rotate(0deg)'">
+                            <i class="@($"fas fa-rotate-right {(isRefreshing ? "fa-spin" : "")}")"></i>
+                            <span class="fw-semibold">Refresh</span>
+                        </button>
                     </div>
 
-                    <!-- Search -->
+
+                    <!-- Search Input -->
                     <div class="input-group mb-3">
                         <span class="input-group-text bg-light border-0">🔍</span>
                         <input type="text"
                                class="form-control border-0 shadow-sm"
                                placeholder="Search Month or Year..."
                                @bind="searchFilter"
-                               @bind:event="oninput" />
+                               @bind:event="oninput"/>
                     </div>
 
                     <!-- Scrollable List -->
@@ -55,7 +65,7 @@
                         </ul>
                         @if (!FilteredMonthYearPairs.Any())
                         {
-                        <div class="text-muted text-center mt-4">❗ No matching month-year found.</div>
+                            <div class="text-muted text-center mt-4">❗ No matching month-year found.</div>
                         }
                     </div>
                 </div>
@@ -73,50 +83,50 @@
                     <div class="card-body p-0 flex-grow-1 overflow-auto">
                         @if (dataLoaded && FilteredEntries.Any())
                         {
-                        <div class="mb-3 text-end">
-                            <button class="btn btn-outline-success btn-sm shadow-sm" @onclick="PrintFirstStockCard">
-                                🖨️ Print Stock Card
-                            </button>
-                        </div>
+                            <div class="mb-3 text-end">
+                                <button class="btn btn-outline-success btn-sm shadow-sm" @onclick="PrintFirstStockCard">
+                                    🖨️ Print Stock Card
+                                </button>
+                            </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-hover table-bordered table-striped align-middle">
-                                <thead class="table-primary text-center">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Reference</th>
-                                    <th>Receipt Qty</th>
-                                    <th>Issue Qty</th>
-                                    <th>Office</th>
-                                    <th>Balance Qty</th>
-                                    <th>No. of Days to Consume</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach (var entrys in FilteredEntries)
-                                {
-                                foreach (var entry in entrys.entries)
-                                {
-                                <tr class="text-center">
-                                    <td>@entry.date</td>
-                                    <td>@entry.reference</td>
-                                    <td>@entry.receiptQty</td>
-                                    <td>@entry.issueQty</td>
-                                    <td>@entry.office</td>
-                                    <td>@entry.balanceQty</td>
-                                    <td>@entry.daysToConsume</td>
-                                </tr>
-                                }
-                                }
-                                </tbody>
-                            </table>
-                        </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-bordered table-striped align-middle">
+                                    <thead class="table-primary text-center">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Reference</th>
+                                        <th>Receipt Qty</th>
+                                        <th>Issue Qty</th>
+                                        <th>Office</th>
+                                        <th>Balance Qty</th>
+                                        <th>No. of Days to Consume</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var entrys in FilteredEntries)
+                                    {
+                                        foreach (var entry in entrys.entries)
+                                        {
+                                            <tr class="text-center">
+                                                <td>@entry.date</td>
+                                                <td>@entry.reference</td>
+                                                <td>@entry.receiptQty</td>
+                                                <td>@entry.issueQty</td>
+                                                <td>@entry.office</td>
+                                                <td>@entry.balanceQty</td>
+                                                <td>@entry.daysToConsume</td>
+                                            </tr>
+                                        }
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
                         }
                         else if (dataLoaded && !FilteredEntries.Any())
                         {
-                        <div class="alert alert-warning text-center mt-4 rounded-3 shadow-sm">
-                            ⚠️ No matching stock entries found.
-                        </div>
+                            <div class="alert alert-warning text-center mt-4 rounded-3 shadow-sm">
+                                ⚠️ No matching stock entries found.
+                            </div>
                         }
                     </div>
                 </div>
@@ -126,13 +136,6 @@
     </div>
 </section>
 
-
-
-
-
-
-
-
 @code {
     private List<StockCardData> stock_list = new();
     private List<StockCardData> FilteredEntries = new();
@@ -140,26 +143,33 @@
     private bool isLoading = false;
     private bool hasError = false;
     private bool dataLoaded = false;
+    private bool isRefreshing = false;
 
     private string selectedMonth = "";
     private string selectedYear = "";
     private string searchFilter = "";
 
-    // Load data initially
     protected override async Task OnInitializedAsync()
     {
         stock_list = await Http.GetFromJsonAsync<List<StockCardData>>("api/Task/ViewStock") ?? new();
+        await LoadReport();
     }
 
-    // This is the async handler for month-year selection
+    private async Task RefreshData()
+    {
+        isRefreshing = true;
+        stock_list = await Http.GetFromJsonAsync<List<StockCardData>>("api/Task/ViewStock") ?? new();
+        await LoadReport();
+        isRefreshing = false;
+    }
+
     private async Task OnMonthYearSelected(string month, string year)
     {
         selectedMonth = month;
         selectedYear = year;
         await LoadReport();
-    }   
+    }
 
-    // Filter logic applied to selected values
     private async Task LoadReport()
     {
         isLoading = true;
@@ -182,19 +192,12 @@
         }
     }
 
-    // Filters the loaded stock list for selected month/year
     private void ApplyFilters()
     {
         FilteredEntries = stock_list
             .Where(x => x.month == selectedMonth && x.year.ToString() == selectedYear)
             .ToList();
     }
-
-    private int ParseYear(string yearStr)
-    {
-        return int.TryParse(yearStr, out var y) ? y : 0;
-    }
-
 
     private List<MonthYearPair> FilteredMonthYearPairs =>
         stock_list
@@ -204,19 +207,11 @@
                 x.year.ToString().Contains(searchFilter)
             )
             .Select(x => new MonthYearPair { Month = x.month, Year = x.year.ToString() })
-            .DistinctBy(x => new { x.Month, x.Year }) // use DistinctBy from System.Linq
+            .DistinctBy(x => new { x.Month, x.Year })
             .OrderByDescending(x => x.Year)
             .ThenByDescending(x => x.Month)
             .ToList();
 
-    
-
-
-
-
-
-
-    // JS Interop to print
     private async Task PrintFirstStockCard()
     {
         if (FilteredEntries == null || !FilteredEntries.Any())
@@ -247,8 +242,7 @@
             })
         });
     }
-    
-    
+
     public class MonthYearPair
     {
         public string Month { get; set; }
@@ -256,10 +250,3 @@
     }
 
 }
-
-
-
-
-
-
-

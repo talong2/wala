@@ -152,6 +152,7 @@ else
 
             await OnFormSubmitted.InvokeAsync();
             DialogService.Close();
+            StateHasChanged();
         }
         else
         {
