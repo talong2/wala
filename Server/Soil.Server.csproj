@@ -7,13 +7,27 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Reports\Stock.trdp" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.20" />
     <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
+    <PackageReference Include="Telerik.Reporting" Version="16.1.22.622" />
+    <PackageReference Include="Telerik.Reporting.OpenXmlRendering" Version="16.1.22.622" />
+    <PackageReference Include="Telerik.Reporting.Services.AspNetCore" Version="16.1.22.622" />
+    <PackageReference Include="Telerik.Reporting.WebServiceDataSource" Version="16.1.22.622" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Client\Soil.Client.csproj" />
     <ProjectReference Include="..\Shared\Soil.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="Reports\Stock.trdp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Page>
   </ItemGroup>
 
 

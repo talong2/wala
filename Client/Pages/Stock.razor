@@ -140,6 +140,8 @@
     private List<StockCardData> stock_list = new();
     private List<StockCardData> FilteredEntries = new();
 
+    private StockCardData report_stock = new();
+    
     private bool isLoading = false;
     private bool hasError = false;
     private bool dataLoaded = false;
@@ -212,13 +214,29 @@
             .ThenByDescending(x => x.Month)
             .ToList();
 
+    
+    
     private async Task PrintFirstStockCard()
+    {
+        var report_stocks = await Http.GetFromJsonAsync<List<StockCardData>>("api/Task/ViewStock");
+
+        // Assuming you want the first stock card's Id from the list
+        var firstStock = report_stocks?.FirstOrDefault();
+
+        var query = $"?id={Uri.EscapeDataString(firstStock?.Id ?? "")}";
+
+        await JS.InvokeVoidAsync("open", $"/api/Reports/StockReport{query}", "_blank");
+    }
+    
+    /*private async Task PrintFirstStockCard()
     {
         if (FilteredEntries == null || !FilteredEntries.Any())
         {
             Console.WriteLine("No stock data found.");
             return;
         }
+        
+        
 
         var firstStock = FilteredEntries.First();
 
@@ -242,6 +260,7 @@
             })
         });
     }
+    */
 
     public class MonthYearPair
     {
