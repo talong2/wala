@@ -225,7 +225,7 @@
 
         var query = $"?id={Uri.EscapeDataString(firstStock?.Id ?? "")}";
 
-        await JS.InvokeVoidAsync("open", $"/api/Reports/StockReport{query}", "_blank");
+        await JS.InvokeVoidAsync("open", $"/api/Report/StockReport{query}", "_blank");
     }
     
     /*private async Task PrintFirstStockCard()
