@@ -1,0 +1,402 @@
+﻿
+@using PPDIS.Shared.Models
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+
+<h3 class="mb-4">📝 Stock Card Entry Form</h3>
+
+<EditForm Model="@stockCard" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+
+    <!-- 📌 Basic Info -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Month</label>
+            <InputText class="form-control" @bind-Value="stockCard.month"/>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Year</label>
+            <InputText class="form-control" @bind-Value="stockCard.year"/>
+        </div>
+     
+    </div>
+
+  
+
+
+    <!-- 🧾 Purchase Request -->
+    <h5 class="mt-4">🧾 Purchase Request</h5>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Purchase Request:</label>
+            <InputText class="form-control" @bind-Value="stockCard.pr_number" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">📅 Date:</label>
+            <InputText class="form-control" @bind-Value="stockCard.pr_date" />
+        </div>
+    </div>
+
+    <button class="btn btn-sm btn-success mb-2" type="button" @onclick="AddPrSupply">➕ Add PR Supply</button>
+    @foreach (var supply in stockCard.list_supplies_pr)
+    {
+    <div class="card mb-2 p-3 shadow-sm">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <label class="form-label">Unit</label>
+                <InputText class="form-control" @bind-Value="supply.unit" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Description</label>
+                <InputText class="form-control" @bind-Value="supply.description" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Quantity</label>
+                <InputTextArea class="form-control font-monospace" rows="9"
+                               @bind-Value="supply.description"/>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Unit Cost</label>
+                <InputText class="form-control" @bind-Value="supply.unitcost" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Total</label>
+                <InputText class="form-control" @bind-Value="supply.totalcost" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-sm btn-danger w-100" type="button" @onclick="@(() => RemovePrSupply(supply))">🗑</button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- 💰 Quotation -->
+    <h5 class="mt-4">📑 Quotation</h5>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label">🧾 Purchase Request:</label>
+            <InputText class="form-control" @bind-Value="stockCard.pr_number" disabled />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">📅 Date:</label>
+            <InputText class="form-control" @bind-Value="stockCard.pr_date" disabled />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">📄 Canvass Number:</label>
+            <InputText class="form-control" @bind-Value="stockCard.canvass_no" />
+        </div>
+    </div>
+
+    <button class="btn btn-sm btn-warning mb-2" type="button" @onclick="AddQuSupply">➕ Add Quotation</button>
+    @foreach (var quote in stockCard.list_supplies_qu)
+    {
+    <div class="card p-3 mb-2 shadow-sm">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <label class="form-label">Unit</label>
+                <InputText class="form-control" @bind-Value="quote.unit" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Description</label>
+                <InputText class="form-control" @bind-Value="quote.description" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Quantity</label>
+                <InputText class="form-control" @bind-Value="quote.quantity" />
+            </div>
+  
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-sm btn-danger w-100" type="button" @onclick="@(() => RemoveQuSupply(quote))">🗑</button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- 📦 PO Groups -->
+    <h5 class="mt-4">📄 PO Groups</h5>
+    <button class="btn btn-sm btn-primary mb-3" type="button" @onclick="AddPoGroup">➕ Add PO Group</button>
+    @foreach (var group in stockCard.list_supplies_po)
+    {
+    <div class="card mb-3 p-3 border-start border-4 border-info">
+        <h6 class="text-info">Supplier: @group.Supplier</h6>
+        <div class="row mb-2">
+            <div class="col-md-3">
+                <label class="form-label">Supplier</label>
+                <InputText class="form-control" @bind-Value="group.Supplier" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Address</label>
+                <InputText class="form-control" @bind-Value="group.Address" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">TIN</label>
+                <InputText class="form-control" @bind-Value="group.TIN" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Mode</label>
+                <InputText class="form-control" @bind-Value="group.ProcurementMode" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Po Number</label>
+                <InputText class="form-control" @bind-Value="group.PONumber" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Po Date</label>
+                <InputText class="form-control" @bind-Value="group.PODate" />
+            </div>
+        </div>
+
+        @foreach (var item in group.Supplies)
+        {
+        <div class="row mb-2 align-items-center">
+            <div class="col-md-2">
+                <label class="form-label">Unit</label>
+                <InputText class="form-control" @bind-Value="item.unit" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Description</label>
+                <InputText class="form-control" @bind-Value="item.description" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Quantity</label>
+                <InputText class="form-control" @bind-Value="item.quantity" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Unit Cost</label>
+                <InputText class="form-control" @bind-Value="item.unitcost" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Total</label>
+                <InputText class="form-control" @bind-Value="item.totalcost" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-sm btn-danger w-100" type="button" @onclick="@(() => RemoveSupplyFromPoGroup(group, item))">🗑</button>
+            </div>
+        </div>
+        }
+
+        <button class="btn btn-sm btn-outline-info mt-2" type="button" @onclick="@(() => AddSupplyToPoGroup(group))">➕ Add PO Supply</button>
+    </div>
+    }
+
+    <!-- 🕵️ INS Groups -->
+    <h5 class="mt-4">🕵️ Inspection Groups</h5>
+    <button class="btn btn-sm btn-success mb-3" type="button" @onclick="AddInsGroup">➕ Add Inspection Group</button>
+    @foreach (var insGroup in stockCard.list_supplies_ins)
+    {
+    <div class="card p-3 mb-3 border-start border-success border-4">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Inspection Number</label>
+                <InputText class="form-control" @bind-Value="insGroup.InspectionNumber" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Inspection Date</label>
+                <InputText class="form-control" @bind-Value="insGroup.InspectionDate" />
+            </div>
+        </div>
+
+        @foreach (var ins in insGroup.Ins)
+        {
+        <div class="row mb-2 align-items-center">
+            <div class="col-md-2">
+                <label class="form-label">Unit</label>
+                <InputText class="form-control" @bind-Value="ins.unit" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Description</label>
+                <InputText class="form-control" @bind-Value="ins.description" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Quantity</label>
+                <InputText class="form-control" @bind-Value="ins.quantity" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Unit Cost</label>
+                <InputText class="form-control" @bind-Value="ins.unitcost" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Total</label>
+                <InputText class="form-control" @bind-Value="ins.totalcost" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-sm btn-danger w-100" type="button" @onclick="@(() => RemoveInsSupply(insGroup, ins))">🗑</button>
+            </div>
+        </div>
+        }
+
+        <button class="btn btn-sm btn-outline-success mt-2" type="button" @onclick="@(() => AddSupplyToInsGroup(insGroup))">➕ Add INS Supply</button>
+    </div>
+    }
+
+
+
+
+
+    <!-- Description -->
+    <div class="mb-4">
+        <label class="form-label fw-bold">Description</label>
+        <InputText class="form-control" @bind-Value="stockCard.descript" />
+    </div>
+
+    <!-- Basic Item Info -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label fw-bold">Item</label>
+            <InputText class="form-control" @bind-Value="stockCard.item" />
+        </div>
+        <div class="col-md-2 mb-3">
+            <label class="form-label fw-bold">Unit</label>
+            <InputText class="form-control" @bind-Value="stockCard.unit" />
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label fw-bold">Stock</label>
+            <InputText class="form-control" @bind-Value="stockCard.stock" />
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label fw-bold">Reorder</label>
+            <InputText class="form-control" @bind-Value="stockCard.reorder" />
+        </div>
+    </div>
+
+    <!-- Stock Entries Section -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+        <h5 class="mb-0">📋 Stock Entries</h5>
+        <button class="btn btn-sm btn-secondary" type="button" @onclick="AddStockEntry">
+            ➕ Add Entry
+        </button>
+    </div>
+
+    @foreach (var entry in stockCard.entries)
+    {
+    <div class="card mb-3 shadow-sm border-start border-4 border-primary">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">📅 Date</label>
+                    <InputText class="form-control" @bind-Value="entry.date" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">📑 Reference</label>
+                    <InputText class="form-control" @bind-Value="entry.reference" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">📥 Receipt Qty</label>
+                    <InputText class="form-control" @bind-Value="entry.receiptQty" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">📤 Issue Qty</label>
+                    <InputText class="form-control" @bind-Value="entry.issueQty" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">🏢 Office</label>
+                    <InputText class="form-control" @bind-Value="entry.office" />
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">📦 Bal</label>
+                    <InputText class="form-control" @bind-Value="entry.balanceQty" />
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">⏳ Days</label>
+                    <InputText class="form-control" @bind-Value="entry.daysToConsume" />
+                </div>
+            </div>
+
+            <div class="text-end mt-3">
+                <button class="btn btn-sm btn-danger" @onclick="@(() => RemoveStockEntry(entry))">
+                    🗑 Remove
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+
+
+
+    <!-- ✅ Submit -->
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">💾 Save Stock Card</button>
+    </div>
+</EditForm>
+
+
+
+
+
+
+@code {
+    [Parameter] public StockCardData stockCard { get; set; } = new();
+    [Parameter] public EventCallback OnFormSubmitted { get; set; }
+
+    private async Task HandleValidSubmit()
+    {
+        HttpResponseMessage response;
+
+            response = await Http.PostAsJsonAsync("api/Task/InsertStock", stockCard);
+       
+
+        if (response.IsSuccessStatusCode)
+        {
+            await OnFormSubmitted.InvokeAsync();
+            DialogService.Close();
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Success",
+                Detail = string.IsNullOrWhiteSpace(stockCard.Id)
+                    ? "Stock card saved successfully!" : "Stock card updated successfully!",
+                Duration = 6000
+            });
+
+     
+        }
+        else
+        {
+            var errorDetails = await response.Content.ReadAsStringAsync();
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = $"Failed to update. Server says: {errorDetails}",
+                Duration = 6000
+            });
+        }
+    }
+
+
+    private void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+
+    void AddPrSupply() => stockCard.list_supplies_pr.Add(new PrSuppliesClass());
+    void RemovePrSupply(PrSuppliesClass supply) => stockCard.list_supplies_pr.Remove(supply);
+
+    void AddQuSupply() => stockCard.list_supplies_qu.Add(new QuSuppliesClass());
+    void RemoveQuSupply(QuSuppliesClass supply) => stockCard.list_supplies_qu.Remove(supply);
+
+    void AddPoGroup() => stockCard.list_supplies_po.Add(new ListSuppliesGroupPo
+    {
+        Supplies = new List<SuppliesClass> { new SuppliesClass() }
+    });
+    void AddSupplyToPoGroup(ListSuppliesGroupPo group) => group.Supplies.Add(new SuppliesClass());
+    void RemoveSupplyFromPoGroup(ListSuppliesGroupPo group, SuppliesClass item) => group.Supplies.Remove(item);
+
+    void AddInsGroup() => stockCard.list_supplies_ins.Add(new ListSuppliesGroupIns
+    {
+        Ins = new List<InsSuppliesClass> { new InsSuppliesClass() }
+    });
+    void AddSupplyToInsGroup(ListSuppliesGroupIns group) => group.Ins.Add(new InsSuppliesClass());
+    void RemoveInsSupply(ListSuppliesGroupIns group, InsSuppliesClass item) => group.Ins.Remove(item);
+    void AddStockEntry() => stockCard.entries.Add(new StockClass());
+    void RemoveStockEntry(StockClass entry) => stockCard.entries.Remove(entry);
+}

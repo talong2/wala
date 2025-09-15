@@ -1,0 +1,192 @@
+﻿@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject IModalServices Modal
+
+@if (UseBuiltinDiv)
+{
+    <div class="modal fade" id="modal-barcode-scanner" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modal-barcode-scanner" aria-hidden="true">
+        <div class="modal-dialog" @ref="barcodeScannerElement">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Scanner</h5>
+                    <button type="button" class="btn-close" data-action="closeButton" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <!-- Edit form for the current item -->
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-12 d-flex justify-content-between">
+                            <div></div>
+                            <div data-action="sourceSelectPanel" class="flex-fill me-2" style="display:none">
+                                @*  <label for="sourceSelect">@SelectDeviceBtnTitle:</label> *@
+                                <select data-action="sourceSelect" style="max-width:100%" class="form-control" placeholder="Source">
+                                </select>
+                            </div>
+                            <div class="d-flex align-items-end">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-primary btn-sm p-2 w-25" data-action="startButton">@ScanBtnTitle</button>
+                                    <button type="button" class="btn btn-secondary btn-sm p-2 w-25" data-action="resetButton">@ResetBtnTitle</button>
+                                    @* <button type="button" class="btn btn-info btn-sm p-2 w-25" data-action="closeButton" data-bs-dismiss="modal" aria-label="Close">@CloseBtnTitle</button> *@
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <video id="video" class="w-100 border rounded" style="max-height: 60%;"></video>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+
+    /// <summary>
+    /// 扫码按钮文本/Scan button title
+    /// </summary>
+    [Parameter]
+    public string ScanBtnTitle { get; set; } = "Scan";
+
+    /// <summary>
+    /// 复位按钮文本/Reset button title
+    /// </summary>
+    [Parameter]
+    public string ResetBtnTitle { get; set; } = "Reset";
+
+    /// <summary>
+    /// 关闭按钮文本/Close button title
+    /// </summary>
+    [Parameter]
+    public string CloseBtnTitle { get; set; } = "Close";
+
+    /// <summary>
+    /// 选择设备按钮文本/Select device button title
+    /// </summary>
+    [Parameter]
+    public string SelectDeviceBtnTitle { get; set; } = "Select";
+
+
+    /// <summary>
+    /// 扫码结果回调方法/Scan result callback method
+    /// </summary>
+    [Parameter]
+    public EventCallback<(string, string,string)> ScanResult { get; set; }
+
+    /// <summary>
+    /// 关闭扫码框回调方法/Close scan code callback method
+    /// </summary>
+    [Parameter]
+    public EventCallback Close { get; set; }
+
+    /// <summary>
+    /// 错误回调方法/Error callback method
+    /// </summary>
+    [Parameter]
+    public Func<string, Task> OnError { get; set; }
+
+    /// <summary>
+    /// 扫码结果/Scan result
+    /// </summary>
+    [Parameter]
+    public string Result { get; set; }
+
+    /// <summary>
+    /// 使用内置DIV/Use builtin Div
+    /// </summary>
+    [Parameter] public bool UseBuiltinDiv { get; set; } = true;
+
+    /// <summary>
+    /// 显示扫码框/Show scan box
+    /// </summary>
+    [Parameter]
+    [Obsolete]
+    public bool ShowScanBarcode { get; set; }
+
+    private IJSObjectReference module;
+    private DotNetObjectReference<QRScanner> objRef;
+
+    /// <summary>
+    ///
+    /// </summary>
+    public ElementReference barcodeScannerElement { get; set; }
+    private string Field;
+    private string Source;
+
+    public async Task OpenScanner(string fieldname, string source)
+    {
+        try
+        {
+            Field = fieldname;
+            Source = source;
+            objRef = DotNetObjectReference.Create(this);
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./vendor/BarcodeScanner/lib/zxing/zxingjs1.2.js");
+            await module.InvokeVoidAsync("init", true, objRef, barcodeScannerElement, barcodeScannerElement.Id);
+            await Modal.Build("modal-barcode-scanner");
+        }
+        catch (Exception e)
+        {
+            if (OnError != null) await OnError.Invoke(e.Message);
+
+
+            Debug.WriteLine($"Error Message: {e.Message}");
+            Debug.WriteLine($"Stack Trace: {e.StackTrace}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task GetResult(string val)
+    {
+        await ScanResult.InvokeAsync((val, Field,Source));
+    }
+    //public async Task GetResult(string val) => await ScanResult.InvokeAsync(val, Field);
+
+    [JSInvokable]
+    public async Task CloseScan()
+    {
+        try
+        {
+            await Close.InvokeAsync();
+        }
+        catch { }
+    }
+
+    [JSInvokable]
+    public async Task GetError(string err)
+    {
+        if (OnError != null) await OnError.Invoke(err);
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        try
+        {
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("destroy", barcodeScannerElement.Id);
+                await module.DisposeAsync();
+            }
+            objRef?.Dispose();
+        }
+        catch { }
+    }
+
+    public async Task CloseAsync()
+    {
+        try
+        {
+            await Modal.Close("modal-barcode-scanner");
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("destroy", barcodeScannerElement.Id);
+                await module.DisposeAsync();
+            }
+            objRef?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+        }
+    }
+}

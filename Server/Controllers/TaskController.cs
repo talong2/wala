@@ -27,11 +27,27 @@ public class TaskController : ControllerBase
     [HttpPost("InsertStock")]
     public async Task<IActionResult> CreateStock([FromBody] StockCardData stock)
     {
-        if (stock == null) return BadRequest("No data received.");
-        await _taskService.InsertStock(stock);
-        return Ok("ok");
+        if (stock == null)
+            return BadRequest("No data received.");
+
+        var result = await _taskService.InsertStock(stock);
+        return Ok(result);
     }
   
+    
+    [HttpPost("AddMultiplePOSupplies/{stockId}")]
+    public async Task<IActionResult> AddMultiplePOSupplies(string stockId, [FromBody] List<ListSuppliesGroupPo> newPoGroups)
+    {
+        if (string.IsNullOrEmpty(stockId) || newPoGroups == null || !newPoGroups.Any())
+            return BadRequest("Invalid stockId or empty PO list.");
+
+        var result = await _taskService.AddMultiplePoSuppliesAsync(stockId, newPoGroups);
+
+        if (!result)
+            return NotFound("StockCard not found or update failed.");
+
+        return Ok("Multiple PO supplies added successfully.");
+    }
     
     [HttpGet("ViewStock")]
     public async Task<ActionResult<List<StockCardData>>> ViewStock()
@@ -39,7 +55,31 @@ public class TaskController : ControllerBase
         var result = await _taskService.GetStock();
         return Ok(result);
     }
+
     
+    [HttpPut("UpdateStock/{id}")]
+    public async Task<IActionResult> UpdateStock(string id, [FromBody] StockCardData updatedStock)
+    {
+        if (id != updatedStock.Id)
+        {
+            return BadRequest("ID mismatch.");
+        }
+
+        var result = await _taskService.EditParent(updatedStock);
+
+        if (result)
+            return Ok("Stock card updated successfully.");
+        else
+            return NotFound("Stock card not found.");
+    }
+
+    
+    
+    [HttpPost("DeleteSupply")]
+    public async Task<string> DeleteSupply(string parentId, string description)
+    {
+        return await _taskService.DeleteParent(parentId, description);
+    }
     
     
  [HttpPost("MDBQueryBuilder")]
