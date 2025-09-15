@@ -9,161 +9,150 @@
 
 @if (!isSubmitted)
 {
-    <EditForm Model="@stockCard" OnValidSubmit="@HandleValidSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+<EditForm Model="@stockCard" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
 
-        <div class="card shadow-sm p-4 mb-4">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Month</label>
-                    <InputText @bind-Value="stockCard.month" class="form-control" placeholder="e.g. June" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Year</label>
-                    <InputText @bind-Value="stockCard.year" class="form-control" placeholder="e.g. 2025" />
-                </div>
+
+
+    <h4 class="text-secondary">📦 Entries</h4>
+
+    @foreach (var entry in stockCard.entries)
+    {
+    <div class="card shadow-sm p-4 mb-3 border-start border-4 border-info">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Date</label>
+                <InputText @bind-Value="entry.date" class="form-control" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Reference</label>
+                <InputText @bind-Value="entry.reference" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Receipt Qty</label>
+                <InputText @bind-Value="entry.receiptQty" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Issue Qty</label>
+                <InputText @bind-Value="entry.issueQty" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Office</label>
+                <InputText @bind-Value="entry.office" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Balance Qty</label>
+                <InputText @bind-Value="entry.balanceQty" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Days to Consume</label>
+                <InputText @bind-Value="entry.daysToConsume" class="form-control" />
             </div>
         </div>
-
-        <h4 class="text-secondary">📦 Entries</h4>
-
-        @foreach (var entry in stockCard.entries)
-        {
-            <div class="card shadow-sm p-4 mb-3 border-start border-4 border-info">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Date</label>
-                        <InputText @bind-Value="entry.date" class="form-control" />
-                    </div>
-                    <div class="col-md-8">
-                        <label class="form-label">Reference</label>
-                        <InputText @bind-Value="entry.reference" class="form-control" />
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label">Receipt Qty</label>
-                        <InputText @bind-Value="entry.receiptQty" class="form-control" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Issue Qty</label>
-                        <InputText @bind-Value="entry.issueQty" class="form-control" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Office</label>
-                        <InputText @bind-Value="entry.office" class="form-control" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Balance Qty</label>
-                        <InputText @bind-Value="entry.balanceQty" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Days to Consume</label>
-                        <InputText @bind-Value="entry.daysToConsume" class="form-control" />
-                    </div>
-                </div>
-                <div class="mt-3 d-flex justify-content-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveEntry(entry)">
-                        🗑 Remove Entry
-                    </button>
-                </div>
-            </div>
-        }
-
-        <div class="mb-4">
-            <button type="button" class="btn btn-outline-primary me-2" @onclick="AddEntry">
-                ➕ Add Entry
-            </button>
-            <button type="submit" class="btn btn-success">
-                ✅ Submit Form
+        <div class="mt-3 d-flex justify-content-end">
+            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveEntry(entry)">
+                🗑 Remove Entry
             </button>
         </div>
-    </EditForm>
+    </div>
+    }
+
+    <div class="mb-4">
+        <button type="button" class="btn btn-outline-primary me-2" @onclick="AddEntry">
+            ➕ Add Entry
+        </button>
+        <button type="submit" class="btn btn-success">
+            ✅ Submit Form
+        </button>
+    </div>
+</EditForm>
 }
 else
 {
-    <div class="alert alert-success">
-        ✅ Form submitted successfully!
-    </div>
-    
-    <button class="btn btn-primary mt-3" @onclick="ResetForm">
-        ➕ Add New Form
-    </button>
+<div class="alert alert-success">
+    ✅ Form submitted successfully!
+</div>
+
+<button class="btn btn-primary mt-3" @onclick="ResetForm">
+    ➕ Add New Form
+</button>
 }
 
 @code {
-    [Parameter] public EventCallback OnFormSubmitted { get; set; }
+[Parameter] public EventCallback OnFormSubmitted { get; set; }
 
-    private bool IsError { get; set; }
-    private bool isSubmitted = false;
+private bool IsError { get; set; }
+private bool isSubmitted = false;
 
-    private StockCardData stockCard = new StockCardData
-    {
-        month = "",
-        year = "",
-        entries = new List<StockClass>()
-    };
+private StockCardData stockCard = new StockCardData
+{
+    tracking = "",
 
-    private void ResetForm()
-    {
-        isSubmitted = false;
+entries = new List<StockClass>()
+};
 
-        // Clear form data
-        stockCard = new StockCardData
-        {
-            month = "",
-            year = "",
-            entries = new List<StockClass>()
-        };
-    }
+private void ResetForm()
+{
+isSubmitted = false;
 
-    
-    private void AddEntry()
-    {
-        stockCard.entries.Add(new StockClass());
-    }
+// Clear form data
+stockCard = new StockCardData
+{
+    tracking = "",
 
-    private void RemoveEntry(StockClass entry)
-    {
-        stockCard.entries.Remove(entry);
-    }
+entries = new List<StockClass>()
+};
+}
 
-    private void ShowNotification(NotificationMessage message)
-    {
-        NotificationService.Notify(message);
-    }
 
-    private async Task HandleValidSubmit()
-    {
-        var response = await Http.PostAsJsonAsync("api/Task/InsertStock", stockCard);
+private void AddEntry()
+{
+stockCard.entries.Add(new StockClass());
+}
 
-        if (response.IsSuccessStatusCode)
-        {
-            isSubmitted = true;
+private void RemoveEntry(StockClass entry)
+{
+stockCard.entries.Remove(entry);
+}
 
-            ShowNotification(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Success,
-                Summary = "Success",
-                Detail = "Stock card saved successfully!",
-                Duration = 6000
-            });
+private void ShowNotification(NotificationMessage message)
+{
+NotificationService.Notify(message);
+}
 
-            await OnFormSubmitted.InvokeAsync();
-            DialogService.Close();
-            StateHasChanged();
-        }
-        else
-        {
-            IsError = true;
-            ShowNotification(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = "Failed to save. Please try again.",
-                Duration = 4000
-            });
-        }
-    }
+private async Task HandleValidSubmit()
+{
+var response = await Http.PostAsJsonAsync("api/Task/InsertStock", stockCard);
+
+if (response.IsSuccessStatusCode)
+{
+isSubmitted = true;
+
+ShowNotification(new NotificationMessage
+{
+Severity = NotificationSeverity.Success,
+Summary = "Success",
+Detail = "Stock card saved successfully!",
+Duration = 6000
+});
+
+await OnFormSubmitted.InvokeAsync();
+DialogService.Close();
+StateHasChanged();
+}
+else
+{
+IsError = true;
+ShowNotification(new NotificationMessage
+{
+Severity = NotificationSeverity.Error,
+Summary = "Error",
+Detail = "Failed to save. Please try again.",
+Duration = 4000
+});
+}
+}
 }

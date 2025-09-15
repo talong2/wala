@@ -1,0 +1,617 @@
+﻿@page "/printer"
+@using PPDIS.Shared.Models
+@using Soil.Shared.Models.InventoryModel
+@using Radzen
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+
+
+<style>
+    /* Rounded grid wrapper */
+    .custom-grid {
+        border-radius: 12px;
+        overflow: hidden; /* keeps rows inside the radius */
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    /* Optional: rounded header row */
+    .custom-grid .rz-datatable-thead th {
+        background: #e5e7eb; /* light gray header */
+        font-weight: 600;
+        border: none;
+    }
+
+    /* Optional: soften row dividers */
+    .custom-grid .rz-datatable-data td {
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+
+
+
+    /* Container bar */
+    .white-tabs .rz-tabview-nav {
+        display: flex !important;
+        width: 100%;
+        background: #f9f9f9;
+        border-radius: 40px;
+        padding: 6px;
+        gap: 8px;
+        box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
+    }
+
+
+    /* Each tab — adjust height here */
+    .white-tabs .rz-tabview-nav li {
+        flex: 1;
+        text-align: center;
+        border-radius: 25px;
+
+        /* Adjust height */
+        padding: 16px 18px;  /* vertical | horizontal padding */
+        min-height: 60px;    /* ensures a minimum height if needed */
+
+        background: #ffffff;
+        color: #444;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+
+        display: flex;          /* center content vertically */
+        align-items: center;    /* vertical center */
+        justify-content: center; /* horizontal center */
+    }
+
+    /* Active (selected) tab */
+    .white-tabs .rz-tabview-nav li.rz-tabview-selected {
+        background: linear-gradient(135deg, #ffffff, #f0f0f0);
+        color: #000;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+        transform: translateY(-2px); /* lifted effect */
+    }
+
+    /* Hover effect */
+    .white-tabs .rz-tabview-nav li:hover {
+        background: #f3f3f3;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+
+</style>
+
+
+
+
+<RadzenTabs @bind-SelectedIndex=@selectedIndex class="white-tabs centered-tabs">
+    <Tabs>
+        <RadzenTabsItem Text="Purchase Request">
+
+
+
+            <RadzenCard Style="width:100%; height:90vh; display:flex; flex-direction:column; padding:16px;
+                   border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); background:#ffffff;">
+                <ChildContent>
+
+                    <!-- 🔍 Search, Filters & Print -->
+                    <div style="display:flex; gap:12px; margin-bottom:12px; align-items:center;">
+                        <RadzenTextBox @bind-Value="searchTerm"
+                                       Placeholder="Search by PR Number..."
+                                       Style="flex:1;"
+                                       Change="FilterItems" />
+
+                        <RadzenDropDown @bind-Value="selectedTracking"
+                                        Data="@trackingNumbers"
+                                        Placeholder="Select Tracking..."
+                                        Style="min-width:200px;"
+                                        Change="FilterByTracking" />
+
+                        <RadzenButton Text="Clear" Click="ClearFilters" Style="min-width:100px;" />
+
+                        <!-- 🖨️ Print All -->
+                        <RadzenButton Text="Print All" Click="@PrintAllStockCard" Style="min-width:120px;" />
+                    </div>
+
+                    <!-- 📊 DataGrid -->
+                    <RadzenDataGrid @ref="grid" TItem="PurchaseRequest" Data="@filteredItems"
+                                    class="custom-grid"
+                                    AllowFiltering="true" AllowSorting="true"
+                                    AllowPaging="true" PageSize="10"
+                                    EditMode="DataGridEditMode.Single"
+                                    RowUpdate="@OnUpdateRow"
+                                    RowDelete="@OnDeleteRow"
+                                    ShowPagingSummary="true"
+                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+
+                        <Columns>
+                            <RadzenDataGridColumn TItem="PurchaseRequest" TextAlign="TextAlign.Center" Title="Item No.">
+                                <Template Context="item">
+                                    @(filteredItems.ToList().IndexOf(item) + 1)
+                                </Template>
+                            </RadzenDataGridColumn>
+                            
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="TrackingNo" Title="Tracking">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.TrackingNo" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="PRNumber" Title="PR Number">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.PRNumber" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="PRDate" Title="PR Date">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.PRDate" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="Unit" Title="Unit">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Unit" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="Description" Title="Description">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Description" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="Quantity" Title="Quantity">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.Quantity" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="UnitCost" Title="Unit Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.UnitCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequest" Property="TotalCost" Title="Total Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.TotalCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <!-- ⚙️ Actions -->
+                            <RadzenDataGridColumn TItem="PurchaseRequest" TextAlign="TextAlign.Center" Title="Actions" Width="200px">
+                                <Template Context="item">
+                                    <RadzenButton Icon="edit" Size="ButtonSize.Small"
+                                                  Click="@(args => grid.EditRow(item))" />
+                                    <RadzenButton Icon="delete" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Click="@(args => OnDeleteRow(item))" />
+                                    <RadzenButton Icon="print" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="(args => PrintFirstStockCard(item))" />
+                                </Template>
+
+                                <EditTemplate Context="item">
+                                    <RadzenButton Icon="save" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(args => grid.UpdateRow(item))"/>
+                                    <RadzenButton Icon="cancel" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Click="@(args => grid.CancelEditRow(item))"/>
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </ChildContent>
+            </RadzenCard>
+
+
+
+
+
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Quotation">
+
+
+            <RadzenCard Style="width:100%; height:90vh; display:flex; flex-direction:column; padding:16px;
+              border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); background:#ffffff;">
+                <ChildContent>
+
+                    <!-- 🔍 Search, Filters & Print -->
+                    <div style="display:flex; gap:12px; margin-bottom:12px; align-items:center;">
+                        <RadzenTextBox @bind-Value="searchTermQuotations"
+                                       Placeholder="Search by PR Number..."
+                                       Style="flex:1;"
+                                       Change="FilterQuotations" />
+
+                        <RadzenDropDown @bind-Value="selectedQuotation"
+                                        Data="@quotationNumbers"
+                                        Placeholder="Select Quotation..."
+                                        Style="min-width:200px;"
+                                        Change="FilterByQuotation" />
+
+                        <RadzenButton Text="Clear" Click="ClearQuotationFilters" Style="min-width:100px;" />
+
+                        <!-- 🖨️ Print All -->
+                        <RadzenButton Text="Print All" Click="@PrintAllQuotations" Style="min-width:120px;" />
+                    </div>
+
+                    <!-- 📊 DataGrid -->
+                    <RadzenDataGrid @ref="quotationGrid" TItem="QuotationClass" Data="@filteredQuotations"
+                                    class="custom-grid"
+                                    AllowFiltering="true" AllowSorting="true"
+                                    AllowPaging="true" PageSize="10"
+                                    EditMode="DataGridEditMode.Single"
+                                    RowUpdate="@UpdateQuotationRow"
+                                    RowDelete="@DeleteQuotationRow"
+                                    ShowPagingSummary="true"
+                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+
+                        <Columns>
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="PRNumber" Title="PR Number">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.PRNumber" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="PRDate" Title="PR Date">
+                                <EditTemplate Context="item">
+                                    <RadzenDatePicker @bind-Value="item.PRDate" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="CanvassNo" Title="Canvass No">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.CanvassNo" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="Unit" Title="Unit">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Unit" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="Description" Title="Description">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Description" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="Quantity" Title="Quantity">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.Quantity" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="UnitCost" Title="Unit Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.UnitCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="QuotationClass" Property="TotalCost" Title="Total Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.TotalCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <!-- ⚙️ Actions -->
+                            <RadzenDataGridColumn TItem="QuotationClass" Title="Actions" Width="200px">
+                                <Template Context="item">
+                                    <RadzenButton Icon="edit" Size="ButtonSize.Small"
+                                                  Click="@(args => quotationGrid.EditRow(item))" />
+                                    <RadzenButton Icon="delete" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Click="@(args => DeleteQuotationRow(item))" />
+                                    <RadzenButton Icon="print" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(args => PrintQuotation(item))" />
+                                </Template>
+
+                                <EditTemplate Context="item">
+                                    <RadzenButton Icon="save" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(args => quotationGrid.UpdateRow(item))"/>
+                                    <RadzenButton Icon="cancel" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Click="@(args => quotationGrid.CancelEditRow(item))"/>
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </ChildContent>
+            </RadzenCard>
+
+
+
+
+        </RadzenTabsItem>
+        
+        
+        <RadzenTabsItem Text="Purchase Order">
+
+
+            <RadzenCard Style="width:100%; height:90vh; display:flex; flex-direction:column; padding:16px;
+              border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); background:#ffffff;">
+                <ChildContent>
+
+                    <!-- 🔍 Search, Filters & Print -->
+                    <div style="display:flex; gap:12px; margin-bottom:12px; align-items:center;">
+                        <RadzenTextBox @bind-Value="searchTerm"
+                                       Placeholder="Search by PO Number..."
+                                       Style="flex:1;"
+                                       Change="FilterPOs" />
+
+                        <RadzenDropDown @bind-Value="selectedPO"
+                                        Data="@poNumbers"
+                                        Placeholder="Select PO..."
+                                        Style="min-width:200px;"
+                                        Change="FilterByPO" />
+
+                        <RadzenButton Text="Clear" Click="ClearPOFilters" Style="min-width:100px;" />
+
+                        <!-- 🖨️ Print All -->
+                        <RadzenButton Text="Print All" Click="@PrintAllPOs" Style="min-width:120px;" />
+                    </div>
+
+                    <!-- 📊 DataGrid -->
+                    <RadzenDataGrid @ref="poGrid" TItem="PurchaseOrderClass" Data="@filteredPOs"
+                                    class="custom-grid"
+                                    AllowFiltering="true" AllowSorting="true"
+                                    AllowPaging="true" PageSize="10"
+                                    EditMode="DataGridEditMode.Single"
+                                    RowUpdate="@UpdatePORow"
+                                    RowDelete="@DeletePORow"
+                                    ShowPagingSummary="true"
+                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+
+                        <Columns>
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="PONumber" Title="PO Number">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.PONumber" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="PODate" Title="PO Date">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.PODate" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="Supplier" Title="Supplier">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Supplier" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="Unit" Title="Unit">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Unit" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="Description" Title="Description">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Description" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="Quantity" Title="Quantity">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.Quantity" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="UnitCost" Title="Unit Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.UnitCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Property="TotalCost" Title="Total Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.TotalCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <!-- ⚙️ Actions -->
+                            <RadzenDataGridColumn TItem="PurchaseOrderClass" Title="Actions" Width="200px">
+                                <Template Context="item">
+                                    <RadzenButton Icon="edit" Size="ButtonSize.Small"
+                                                  Click="@(args => poGrid.EditRow(item))" />
+                                    <RadzenButton Icon="delete" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Click="@(args => DeletePORow(item))" />
+                                    <RadzenButton Icon="print" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(args => PrintPO(item))" />
+                                </Template>
+
+                                <EditTemplate Context="item">
+                                    <RadzenButton Icon="save" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(args => poGrid.UpdateRow(item))"/>
+                                    <RadzenButton Icon="cancel" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Click="@(args => poGrid.CancelEditRow(item))"/>
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </ChildContent>
+            </RadzenCard>
+
+
+
+        </RadzenTabsItem>   
+        
+        
+        
+        <RadzenTabsItem Text="Inspection And Acceptance">
+
+
+            <RadzenCard Style="width:100%; height:90vh; display:flex; flex-direction:column; padding:16px;
+              border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); background:#ffffff;">
+                <ChildContent>
+
+                    <!-- Search, Filters & Print -->
+                    <div style="display:flex; gap:12px; margin-bottom:12px; align-items:center;">
+                        <RadzenTextBox @bind-Value="searchTerm"
+                                       Placeholder="Search by Inspection Number..."
+                                       Style="flex:1;"
+                                       Change="FilterInspections" />
+
+                        <RadzenDropDown @bind-Value="selectedInspection"
+                                        Data="@inspectionNumbers"
+                                        Placeholder="Select Inspection..."
+                                        Style="min-width:200px;"
+                                        Change="FilterByInspection" />
+
+                        <RadzenButton Text="Clear" Click="ClearInspectionFilters" Style="min-width:100px;" />
+                        <RadzenButton Text="Print All" Click="@PrintAllInspections" Style="min-width:120px;" />
+                    </div>
+
+                    <!-- DataGrid -->
+                    <RadzenDataGrid @ref="inspectionGrid" TItem="InspectionClass" Data="@filteredInspections"
+                                    class="custom-grid"
+                                    AllowFiltering="true" AllowSorting="true"
+                                    AllowPaging="true" PageSize="10"
+                                    EditMode="DataGridEditMode.Single"
+                                    RowUpdate="@UpdateInspectionRow"
+                                    RowDelete="@DeleteInspectionRow"
+                                    ShowPagingSummary="true"
+                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+
+                        <Columns>
+                            <RadzenDataGridColumn TItem="InspectionClass" Property="InspectionNumber" Title="Inspection Number">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.InspectionNumber" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="InspectionClass" Property="InspectionDate" Title="Inspection Date">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.InspectionDate" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="InspectionClass" Property="Unit" Title="Unit">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Unit" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="InspectionClass" Property="Description" Title="Description">
+                                <EditTemplate Context="item">
+                                    <RadzenTextBox @bind-Value="item.Description" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="InspectionClass" Property="Quantity" Title="Quantity">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.Quantity" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="InspectionClass" Property="UnitCost" Title="Unit Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.UnitCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="InspectionClass" Property="TotalCost" Title="Total Cost">
+                                <EditTemplate Context="item">
+                                    <RadzenNumeric @bind-Value="item.TotalCost" Style="width:100%" />
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+
+                            <!-- Actions -->
+                            <RadzenDataGridColumn TItem="InspectionClass" Title="Actions" Width="200px">
+                                <Template Context="item">
+                                    <RadzenButton Icon="edit" Size="ButtonSize.Small"
+                                                  Click="@(args => inspectionGrid.EditRow(item))" />
+                                    <RadzenButton Icon="delete" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Click="@(args => DeleteInspectionRow(item))" />
+                                    <RadzenButton Icon="print" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(args => PrintInspection(item))" />
+                                </Template>
+
+                                <EditTemplate Context="item">
+                                    <RadzenButton Icon="save" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(args => inspectionGrid.UpdateRow(item))"/>
+                                    <RadzenButton Icon="cancel" Size="ButtonSize.Small"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Click="@(args => inspectionGrid.CancelEditRow(item))"/>
+                                </EditTemplate>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </ChildContent>
+            </RadzenCard>
+
+
+
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+
+
+
+
+@*<RadzenCard Style="width:100%; margin-bottom:20px; border-bottom:2px solid dodgerblue; border-radius:16px;">
+    <RadzenText TextStyle="TextStyle.H5" Style="margin-bottom: 2px; font-weight:500; color:dimgray">
+        Kigwaaaaaaaaaaaaaaaaa
+    </RadzenText>
+    <RadzenText TextStyle="TextStyle.Caption" Style="margin-top:0">
+        Ambot ni tantan
+    </RadzenText>
+</RadzenCard>*@
+
+
+
+
+
+
+
+
+
+
+
+@code {
+    
+    
+    
+int selectedIndex = 0;
+ 
+    List<string> categories = new() { "Stationery", "Electronics", "Furniture", "Books" };
+    List<string> statuses = new() { "In Stock", "Low Stock", "Out of Stock" };
+  
+  
+    private string selectedCategory { get; set; }
+    private string selectedStatus { get; set; }
+
+  
+    
+    
+
+    
+    
+    
+
+    public class InventoryItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Category { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string Status { get; set; }
+    }
+}

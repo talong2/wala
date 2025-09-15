@@ -10,6 +10,10 @@
     <link href="css/app.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="Agusan.png" />
     <link href="Soil.Client.styles.css" rel="stylesheet" />
+    <link href="_content/Radzen.Blazor/css/material-base.css" rel="stylesheet" />
+    
+
+
 </head>
 
 <body>
@@ -27,8 +31,30 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
     <script src="js/printStockCard.js"></script>
     <script src="js/print.js"></script>
+    <script src="js/qrlogin.js" type="module"></script>
+    <script src="vendor/BarcodeScanner/lib/zxing/zxing.min.js"></script>
+    
+  
+    <script src="js/bootstrap-5.2.0-dist/js/bootstrap.js"></script>
+    <script>
+
+        function OpenModal(elem, static = true, focus = true) {
+            console.log("open-modal");
+            var myModal = new bootstrap.Modal(document.getElementById(elem.replace('#', '')), { backdrop: static ? "static" : true, focus: focus });
+            myModal.show();
+        }
+
+        function CloseModal(elem) {
+            $(elem).modal('hide');
+        }
+
+        function ClearModals() {
+            $('.modal').modal('hide');
+        }
+    </script>
 
 </body>
 

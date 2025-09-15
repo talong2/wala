@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SuperApp.Services
+namespace Soil.Shared.Models
 {
     public interface IModalServices
     {

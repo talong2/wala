@@ -1,18 +1,124 @@
-﻿<RadzenPanelMenu ShowArrow="true">
+﻿<style>
+    body, html {
+        background: linear-gradient(135deg, #121212, #1e1e1e);
+        color: #d7d7d7;
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: Inter, Arial, sans-serif;
+        font-size: 13px; /* base text size */
+    }
 
-    <RadzenPanelMenuItem Path="" Text="Overview" Icon="home" />
-    <RadzenPanelMenuItem Path="dashboard" Text="Dashboard" Icon="dashboard" />
-    <RadzenPanelMenuItem Path="Maps" Text="Maps" Icon="location_on" />
-    <RadzenPanelMenuItem Path="important" Text="Important" Icon="label_important" />
+    .rz-panel-menu {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0.1rem 0.4rem;   /* less vertical padding */
+      
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+
+    .menu-top {
+        flex-grow: 1;
+    }
+    .menu-bottom {
+        margin-top: auto;
+    }
+
+    .menu-section {
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: #9ca3af !important;
+        text-transform: uppercase;
+        margin-top: 0.25rem;  /* reduced */
+        margin-bottom: 0.15rem;
+        padding: 0 0.2rem;
+        line-height: 1; /* compact */
+    }
+
+    /* 🔹 Make menu items full width */
+    .rz-panel-menu .rz-navigation-link {
+        color: #d7d7d7 !important;
+        border-radius: 5px;
+        padding: 0.18rem 0.45rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.76rem;
+        font-weight: 400;
+        line-height: 1;
+        width: 100% !important;      /* full sidebar width */
+        box-sizing: border-box;      /* include padding */
+        justify-content: flex-start; /* keep text left */
+    }
+
+    /* 🔹 Hover and active cover full width */
+    .rz-panel-menu .rz-navigation-link.rz-state-active,
+    .rz-panel-menu .rz-navigation-link:hover {
+        width: 100% !important;
+        background-color: rgba(255,255,255,0.1) !important;
+        color: #fff !important;
+    }
+
+    .rz-panel-menu .rz-panel-menu-group,
+    .rz-panel-menu .rz-navigation-item,
+    .rz-panel-menu .rz-navigation-link,
+    .rz-panel-menu .rz-navigation-item::after,
+    .rz-panel-menu .rz-navigation-link::after {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .rz-panel-menu .rz-navigation-link .material-icons {
+        font-size: 14px;
+        opacity: 0.85;
+        line-height: 1;
+    }
+</style>
 
 
+
+<!-- MENU -->
+<RadzenPanelMenu ShowArrow="false">
+
+    <div class="menu-top">
+        <!-- OVERVIEW -->
+        <div class="menu-section">OVERVIEW</div>
+        <RadzenPanelMenuItem Path="stock" Text="Dashboard" Icon="home" />
+        <RadzenPanelMenuItem Path="printer" Text="Printer" Icon="print" />
+     
+
+     
+
+        <!-- INVENTORY -->
+        <div class="menu-section">INVENTORY</div>
+        <RadzenPanelMenuItem Path="purchase-request" Text="Purchase Request" Icon="note_add" />
+        <RadzenPanelMenuItem Path="quotations" Text="Quotations" Icon="request_quote" />
+        <RadzenPanelMenuItem Path="purchase-orders" Text="Purchase Orders" Icon="shopping_cart" />
+        <RadzenPanelMenuItem Path="inspection" Text="Inspection" Icon="search" />
+        <RadzenPanelMenuItem Path="stocks" Text="Stock Register" Icon="inventory_2" />
+        <RadzenPanelMenuItem Path="reports" Text="Reports" Icon="bar_chart" />
+    </div>
+
+    <!-- TEAM pinned at bottom -->
+    <div class="menu-bottom">
+        <div class="menu-section">TEAM</div>
+        <RadzenPanelMenuItem Path="chat" Text="Chat" Icon="chat" />
+    </div>
 
 </RadzenPanelMenu>
 
-@code {
-    bool sidebarExpanded = false;
-    bool isShowArrow = true;
-    bool multiple = true;
-    bool isAuthenticated = true;
 
+
+
+
+@code {
+bool sidebarExpanded = false;
+bool isShowArrow = true;
+bool multiple = true;
+bool isAuthenticated = true;
 }

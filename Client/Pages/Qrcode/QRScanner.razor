@@ -1,41 +1,146 @@
-﻿@implements IAsyncDisposable
+﻿
+
+@using System.Diagnostics
+@using Soil.Shared.Models
+
+@implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject IModalServices Modal
 
+
+
+<style>
+    body, html {
+        height: 100%;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f2f2f2;
+        color: #111111;
+        font-weight: bold; /* make all text bold by default */
+    }
+
+    .page-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        padding: 1rem;
+        background-color: #f2f2f2;
+    }
+
+    .container {
+        background-color: #f9f9f9;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 400px;
+        width: 100%;
+        border: 1px solid #e0e0e0;
+    }
+
+    h1 {
+        margin-bottom: 1.5rem;
+        font-size: 3rem; /* increased font size */
+        letter-spacing: 2px; /* more spacing for emphasis */
+        color: #111111;
+        font-weight: bold;
+    }
+
+    video {
+        width: 100%;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 2px solid #cccccc;
+    }
+
+    button, input[type=file] {
+        background-color: #111111;
+        color: #ffffff;
+        border: 1px solid #111111;
+        padding: 16px 28px; /* larger padding */
+        font-size: 1.2rem; /* larger font */
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 8px 4px;
+        min-width: 100px;
+        transition: all 0.2s ease;
+        font-weight: bold;
+        letter-spacing: 1px; /* subtle spacing */
+    }
+
+    button:hover:not(:disabled),
+    input[type=file]:hover {
+        background-color: #ffffff;
+        color: #111111;
+        border: 1px solid #111111;
+    }
+
+    button:disabled {
+        background-color: #e0e0e0;
+        color: #888888;
+        border: 1px solid #cccccc;
+        cursor: not-allowed;
+    }
+
+    input[type=file] {
+        display: block;
+        margin: 12px auto;
+        text-align: center;
+    }
+
+    p {
+        margin: 12px 0 8px 0;
+        font-size: 1.1rem; /* bigger text */
+        color: #333333;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+
+    input[type=file] {
+        max-width: 100%;
+    }
+    @@media (max-width: 480px) {
+        .container {
+            padding: 2rem 1rem;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+        }
+
+        button, input[type=file] {
+
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
+
+
+
+
 @if (UseBuiltinDiv)
 {
-    <div class="modal fade" id="modal-barcode-scanner" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modal-barcode-scanner" aria-hidden="true">
-        <div class="modal-dialog" @ref="barcodeScannerElement">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Scanner</h5>
-                    <button type="button" class="btn-close" data-action="closeButton" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <!-- Edit form for the current item -->
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-12 d-flex justify-content-between">
-                            <div></div>
-                            <div data-action="sourceSelectPanel" class="flex-fill me-2" style="display:none">
-                                @*  <label for="sourceSelect">@SelectDeviceBtnTitle:</label> *@
-                                <select data-action="sourceSelect" style="max-width:100%" class="form-control" placeholder="Source">
-                                </select>
-                            </div>
-                            <div class="d-flex align-items-end">
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-primary btn-sm p-2 w-25" data-action="startButton">@ScanBtnTitle</button>
-                                    <button type="button" class="btn btn-secondary btn-sm p-2 w-25" data-action="resetButton">@ResetBtnTitle</button>
-                                    @* <button type="button" class="btn btn-info btn-sm p-2 w-25" data-action="closeButton" data-bs-dismiss="modal" aria-label="Close">@CloseBtnTitle</button> *@
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+   
+    
+    <div class="page-wrapper" @ref="barcodeScannerElement">
+        <div class="container">
+            <h1>QR Login</h1>
 
-                    <div class="text-center">
-                        <video id="video" class="w-100 border rounded" style="max-height: 60%;"></video>
-                    </div>
-                </div>
+            <video id="video"></video>
+     
+       
+            <button type="button" data-action="startButton">
+                Start Scan 
+            </button>
+            <div id="sourceSelectPanel" style="display:none; margin-top:1rem;">
+                <p>Select Camera:</p>
+                <select data-action="sourceSelect"></select>
             </div>
+
+            <p>Or upload a QR/Barcode image:</p>
+            <input type="file" accept="image/*" data-action="fileInput" />
         </div>
     </div>
 }
@@ -114,6 +219,8 @@
     private string Field;
     private string Source;
 
+
+    
     public async Task OpenScanner(string fieldname, string source)
     {
         try

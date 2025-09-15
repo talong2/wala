@@ -5,24 +5,14 @@
 @inject NotificationService NotificationService
 
 
-<h3 class="mb-4">📝 Stock Card Entry Form</h3>
+<h3 class="mb-4" style="text-align: center;">📝 Stock Card Entry Form</h3>
+
 
 <EditForm Model="@stockCard" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
-    <!-- 📌 Basic Info -->
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Month</label>
-            <InputText class="form-control" @bind-Value="stockCard.month"/>
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Year</label>
-            <InputText class="form-control" @bind-Value="stockCard.year"/>
-        </div>
-     
-    </div>
+
 
   
 
@@ -34,6 +24,7 @@
             <label class="form-label">Purchase Request:</label>
             <InputText class="form-control" @bind-Value="stockCard.pr_number" />
         </div>
+      
         <div class="col-md-6">
             <label class="form-label">📅 Date:</label>
             <InputText class="form-control" @bind-Value="stockCard.pr_date" />
@@ -49,30 +40,45 @@
                 <label class="form-label">Unit</label>
                 <InputText class="form-control" @bind-Value="supply.unit" />
             </div>
-            <div class="col-md-4">
+
+            <div class="col-md-2">
                 <label class="form-label">Description</label>
-                <InputText class="form-control" @bind-Value="supply.description" />
+                <InputTextArea class="form-control font-monospace" rows="5"
+                               @bind-Value="supply.description" />
             </div>
+
             <div class="col-md-2">
                 <label class="form-label">Quantity</label>
-                <InputTextArea class="form-control font-monospace" rows="9"
-                               @bind-Value="supply.description"/>
+                <InputNumber class="form-control"
+                             @bind-Value="supply.quantity"
+                             @oninput="() => OnValueChanged(supply)" />
             </div>
+
             <div class="col-md-2">
                 <label class="form-label">Unit Cost</label>
-                <InputText class="form-control" @bind-Value="supply.unitcost" />
+                <InputNumber class="form-control"
+                             @bind-Value="supply.unitcost"
+                             @oninput="() => OnValueChanged(supply)" />
             </div>
-            <div class="col-md-1">
+
+            <div class="col-md-2">
                 <label class="form-label">Total</label>
-                <InputText class="form-control" @bind-Value="supply.totalcost" />
+                <InputNumber class="form-control"
+                             @bind-Value="supply.totalcost"
+                             ReadOnly="true" />
             </div>
+
             <div class="col-md-1">
                 <label class="form-label">&nbsp;</label>
-                <button class="btn btn-sm btn-danger w-100" type="button" @onclick="@(() => RemovePrSupply(supply))">🗑</button>
+                <button class="btn btn-sm btn-danger w-100"
+                        type="button"
+                        @onclick="@(() => RemovePrSupply(supply))">🗑</button>
             </div>
         </div>
     </div>
     }
+
+
 
     <!-- 💰 Quotation -->
     <h5 class="mt-4">📑 Quotation</h5>
@@ -106,7 +112,7 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Quantity</label>
-                <InputText class="form-control" @bind-Value="quote.quantity" />
+                <InputNumber  class="form-control" @bind-Value="quote.quantity" />
             </div>
   
             <div class="col-md-1">
@@ -164,15 +170,15 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Quantity</label>
-                <InputText class="form-control" @bind-Value="item.quantity" />
+                <InputNumber  class="form-control" @bind-Value="item.quantity" />
             </div>
             <div class="col-md-2">
                 <label class="form-label">Unit Cost</label>
-                <InputText class="form-control" @bind-Value="item.unitcost" />
+                <InputNumber  class="form-control" @bind-Value="item.unitcost" />
             </div>
             <div class="col-md-1">
                 <label class="form-label">Total</label>
-                <InputText class="form-control" @bind-Value="item.totalcost" />
+                <InputNumber  class="form-control" @bind-Value="item.totalcost" />
             </div>
             <div class="col-md-1">
                 <label class="form-label">&nbsp;</label>
@@ -215,15 +221,15 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Quantity</label>
-                <InputText class="form-control" @bind-Value="ins.quantity" />
+                <InputNumber  class="form-control" @bind-Value="ins.quantity" />
             </div>
             <div class="col-md-2">
                 <label class="form-label">Unit Cost</label>
-                <InputText class="form-control" @bind-Value="ins.unitcost" />
+                <InputNumber  class="form-control" @bind-Value="ins.unitcost" />
             </div>
             <div class="col-md-1">
                 <label class="form-label">Total</label>
-                <InputText class="form-control" @bind-Value="ins.totalcost" />
+                <InputNumber  class="form-control" @bind-Value="ins.totalcost" />
             </div>
             <div class="col-md-1">
                 <label class="form-label">&nbsp;</label>
@@ -240,6 +246,7 @@
 
 
 
+    @*
     <!-- Description -->
     <div class="mb-4">
         <label class="form-label fw-bold">Description</label>
@@ -317,14 +324,18 @@
         </div>
     </div>
     }
+    *@
 
 
 
 
     <!-- ✅ Submit -->
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary">💾 Save Stock Card</button>
+    <div class="mt-4 text-center">
+        <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm" style="border-radius: 12px; transition: all 0.2s;">
+            💾 Save Stock Card
+        </button>
     </div>
+
 </EditForm>
 
 
@@ -335,13 +346,73 @@
 @code {
     [Parameter] public StockCardData stockCard { get; set; } = new();
     [Parameter] public EventCallback OnFormSubmitted { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // Step 1: Get current year and month
+        var now = DateTime.Now;
+        string yearMonth = now.ToString("yyyy-MM");
+
+        // Step 2: Get the existing stock list
+        var stock_list = await Http.GetFromJsonAsync<List<StockCardData>>("api/Task/ViewStock") ?? new();
+
+        // Step 3: Filter by current month and year, extract last number
+        int maxNumber = 0;
+        foreach (var stock in stock_list)
+        {
+            if (!string.IsNullOrWhiteSpace(stock.tracking) && stock.tracking.StartsWith(yearMonth))
+            {
+                string numberPart = stock.tracking.Substring(8, 4);
+                if (int.TryParse(numberPart, out int num))
+                {
+                    if (num > maxNumber) maxNumber = num;
+                }
+            }
+        }
+
+        // Step 4: Increment number
+        int newNumber = maxNumber + 1;
+
+        // Step 5: Auto-fill fields
+        stockCard.tracking = $"{yearMonth}-{newNumber:D4}";
+        stockCard.pr_number = $"{yearMonth}-{newNumber:D4}";
+        stockCard.pr_date = now.ToString("yyyy-MM-dd"); // formatted as YYYY-MM-DD
+    }
+    
+    
 
     private async Task HandleValidSubmit()
     {
-        HttpResponseMessage response;
+        // Step 1: Get current year and month
+        var now = DateTime.Now;
+        string yearMonth = now.ToString("yyyy-MM");
 
-            response = await Http.PostAsJsonAsync("api/Task/InsertStock", stockCard);
-       
+        // Step 2: Get the existing stock list
+        var stock_list = await Http.GetFromJsonAsync<List<StockCardData>>("api/Task/ViewStock") ?? new();
+
+        // Step 3: Filter by current month and year, extract last number
+        int maxNumber = 0;
+        foreach (var stock in stock_list)
+        {
+            if (!string.IsNullOrWhiteSpace(stock.tracking) && stock.tracking.StartsWith(yearMonth))
+            {
+                // Extract the last 4 digits
+                string numberPart = stock.tracking.Substring(8, 4);
+                if (int.TryParse(numberPart, out int num))
+                {
+                    if (num > maxNumber) maxNumber = num;
+                }
+            }
+        }
+
+        // Step 4: Increment the number
+        int newNumber = maxNumber + 1;
+
+        // Step 5: Generate the new tracking number
+        stockCard.tracking = $"{yearMonth}-{newNumber:D4}"; // e.g., 2025-08-0002
+
+        // Step 6: Submit the stock card
+        var response = await Http.PostAsJsonAsync("api/Task/InsertStock", stockCard);
 
         if (response.IsSuccessStatusCode)
         {
@@ -352,16 +423,14 @@
                 Severity = NotificationSeverity.Success,
                 Summary = "Success",
                 Detail = string.IsNullOrWhiteSpace(stockCard.Id)
-                    ? "Stock card saved successfully!" : "Stock card updated successfully!",
+                    ? "Stock card saved successfully!" 
+                    : "Stock card updated successfully!",
                 Duration = 6000
             });
-
-     
         }
         else
         {
             var errorDetails = await response.Content.ReadAsStringAsync();
-
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -371,6 +440,12 @@
             });
         }
     }
+
+    private void OnValueChanged(PrSuppliesClass supply)
+    {
+        supply.totalcost = (supply.quantity ?? 0) * (supply.unitcost ?? 0);
+        StateHasChanged();
+    }   
 
 
     private void ShowNotification(NotificationMessage message)

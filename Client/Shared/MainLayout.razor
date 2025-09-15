@@ -1,55 +1,97 @@
 ﻿@inherits LayoutComponentBase
 @inject DialogService DialogService
+
+<style>
+    /* Remove white backgrounds everywhere */
+    .no-background,
+    .rz-sidebar,
+    .rz-header,
+    .rz-footer,
+    .rz-body,
+    .rz-panelmenu,
+    .rz-panelmenu .rz-navigation-item,
+    .rz-panelmenu .rz-link {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    /* Remove the dividing lines inside the sidebar menu */
+    .rz-panelmenu .rz-navigation-item,
+    .rz-panelmenu .rz-link,
+    .rz-panelmenu .rz-navigation-item .rz-link {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Optional: keep hover effect subtle */
+    .rz-panelmenu .rz-link:hover {
+        background: rgba(255,255,255,0.1) !important; /* faint hover effect */
+    }
+
+    /* Remove borders/lines between sidebar menu items */
+    .rz-panelmenu .rz-navigation-item,
+    .rz-panelmenu .rz-link,
+    .rz-panelmenu .rz-navigation-item .rz-link {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+
+    .custom-sidebar-toggle {
+        background-color: #333333 !important;
+        color: #F5F5F5 !important; /* icon/text color */
+        border: none !important;
+        border-radius: 6px;
+        padding: 6px;
+    }
+    .custom-sidebar-toggle:hover {
+        background-color: #444444 !important; /* lighter hover */
+    }
+
+</style>
+
+
+
+
 <RadzenLayout>
     <RadzenComponents />
-    <RadzenHeader>
+    <RadzenHeader class="no-background">
         <RadzenTheme Theme="material"></RadzenTheme>
         <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" style="background-color: #333333">
             <!-- Left Stack -->
+
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="-25px">
-                <img src="https://agusandelsur.gov.ph/wp-content/uploads/2023/03/Agusan-del-Sur-Logo.png"
-                     alt="Agusan del Sur Logo"
-                     style="width: 50px; height: 50px; border-radius: 50%; margin-right: 20px; background-color: white; padding: 5px;"/>
+                @*<img src="https://agusandelsur.gov.ph/wp-content/uploads/2023/03/Agusan-del-Sur-Logo.png"
+                     style="width: 45px; height: 45px; border-radius: 50%; margin-right: 10px; margin-left: 15%" />
+                <RadzenText style="font-family: 'Poppins', sans-serif; font-size: 25px; font-weight: bold; color: #F5F5F5; margin-top: 5px ">
+                    PPDIS
+                </RadzenText>*@
 
-                <div style="display: flex; flex-direction: column;">
-                    <span style="font-family: 'Poppins', sans-serif; font-size: 26px; font-weight: bold; color: #F5F5F5;">
-                        Inventory System
-                    </span>
-                    <span style="font-family: 'Poppins', sans-serif; font-size: 14px; color: #E0F2F1;">
-                        Patin-ay National High School
-                    </span>
-                </div>
-
-               
+                <RadzenSidebarToggle
+                    Click="@(() => sidebar1Expanded = !sidebar1Expanded)"
+                    class="custom-sidebar-toggle" />
             </RadzenStack>
-        
-
 
             <!-- Right Stack -->
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="5px">
                 <RadzenAppearanceToggle />
-                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Icon="format_paint" />
-                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Icon="account_circle" />
+                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text"  Icon="format_paint" />
+                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text"  Icon="account_circle" />
             </RadzenStack>
         </RadzenStack>
 
 
     </RadzenHeader>
-    <RadzenSidebar @bind-Expanded="@sidebar1Expanded">
+    <RadzenSidebar @bind-Expanded="@sidebar1Expanded" class="no-background">
         <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="10px"
                      Style="padding: 20px; text-align: center;">
             <img src="https://thumbs.dreamstime.com/b/d-icon-avatar-cartoon-cute-freelancer-woman-working-online-learning-laptop-transparent-png-background-works-embodying-345422695.jpg" alt="User Picture" class="user-picture rounded-circle"
-                 style="width: 150px; height: 150px;" />
-            
-            
-   
-                <RadzenLabel Text="Pacita Apolinaria Andahan" Style="font-weight: bold; font-size: 15px; color: #333;" />
-     
-   
-
+                 style="width: 150px; height: 150px;"/>
+            <RadzenLabel Text="User" Style="font-weight: bold; font-size: 18px;" />
         </RadzenStack>
         <div class="rz-p-4">
-            <NavMenu />
+            <NavMenu/>
         </div>
     </RadzenSidebar>
     <RadzenBody>
@@ -61,5 +103,5 @@
 </RadzenLayout>
 
 @code {
-    bool sidebar1Expanded = true;
+bool sidebar1Expanded = true;
 }

@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace PPDIS.Shared.Models;
+namespace Soil.Shared.Models.InventoryModel;
 
 public class PurchaseRequest
 {

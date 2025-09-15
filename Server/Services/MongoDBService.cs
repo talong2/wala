@@ -20,9 +20,7 @@ public class MongoDBService : IMongoDBService
         var client = new MongoClient(configuration.GetConnectionString("MongoConnection"));
         db = client.GetDatabase("DataBase");
         
-        
-        /*var clientOnline = new MongoClient(configuration.GetConnectionString("MongoConnectionOnline"));
-        db = clientOnline.GetDatabase("IGIS");*/
+  
     }
     
 
@@ -31,16 +29,83 @@ public class MongoDBService : IMongoDBService
 
     public async Task<string> InsertStock(StockCardData stock)
     {
-         db.GetCollection<StockCardData>("Stock").InsertOne(stock);
+        await db.GetCollection<StockCardData>("Stock").InsertOneAsync(stock);
         return stock.Id;
     }
     
+    public async Task<bool> AddMultiplePoSuppliesAsync(string stockId, List<ListSuppliesGroupPo> newPoGroups)
+    {
+        var filter = Builders<StockCardData>.Filter.Eq(s => s.Id, stockId);
+        var update = Builders<StockCardData>.Update.PushEach(s => s.list_supplies_po, newPoGroups);
+
+        var result = await _task.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
     
     public async Task<List<StockCardData>> GetStock()
     {
         return await db.GetCollection<StockCardData>("Stock").Find(q => true).ToListAsync();
     }
+    
+    public async Task<bool> EditParent(StockCardData stock)
+    {
+        var collection = db.GetCollection<StockCardData>("Stock");
+        var filter = Builders<StockCardData>.Filter.Eq(t => t.Id, stock.Id);
 
+        var result = await collection.ReplaceOneAsync(filter, stock, new ReplaceOptions { IsUpsert = false });
+
+        return result.MatchedCount > 0 && result.ModifiedCount > 0;
+    }
+
+
+    
+    public async Task<string> DeleteParent(string parentId, string descriptionToDelete)
+    {
+        var collection = db.GetCollection<StockCardData>("Stock");
+
+        var parent = await collection.Find(s => s.Id == parentId).FirstOrDefaultAsync();
+
+        if (parent == null)
+            return "not found";
+
+        // Filter list_supplies_pr
+        parent.list_supplies_pr = parent.list_supplies_pr
+            .Where(s => s.description != descriptionToDelete)
+            .ToList();
+
+        // Filter list_supplies_qu
+        parent.list_supplies_qu = parent.list_supplies_qu
+            .Where(s => s.description != descriptionToDelete)
+            .ToList();
+
+        // Filter list_supplies_po (nested Supplies)
+        foreach (var group in parent.list_supplies_po)
+        {
+            group.Supplies = group.Supplies
+                .Where(s => s.description != descriptionToDelete)
+                .ToList();
+        }
+
+        // Filter list_supplies_ins (nested Ins)
+        foreach (var group in parent.list_supplies_ins)
+        {
+            group.Ins = group.Ins
+                .Where(s => s.description != descriptionToDelete)
+                .ToList();
+        }
+
+        // Save the updated document
+        var result = await collection.ReplaceOneAsync(
+            s => s.Id == parentId,
+            parent
+        );
+
+        return result.ModifiedCount > 0 ? "ok" : "not found";
+    }
+
+
+    
+    
     public async Task<List<T>> getDataListFiltered<T>(string table, PipelineDefinition<T, T> Aggregate)
     {
         var collection = db.GetCollection<T>(table);

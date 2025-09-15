@@ -1,29 +1,24 @@
-﻿@page "/"
+﻿@page "/stock"
 @using PPDIS.Shared.Models
 @inject IJSRuntime JS
 @inject HttpClient Http
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
 
-<!-- 🔼 Stock Form Section -->
-<div class="col-lg-12 col-xl-12 col-sm-12 d-flex mb-4">
-    <div class="card p-4 w-100 shadow-sm border-0 bg-light rounded-4 mb-4" style="min-height: 300px;">
-        <StockForm/>
-    </div>
-</div>
 
 <section class="section dashboard">
     <div class="row g-4">
 
         <!-- 🔍 Left Panel -->
         <div class="col-lg-4 col-xl-4 col-sm-12 d-flex">
-            <div class="card w-100 p-4 shadow-sm border-0 rounded-4 bg-white mb-4" style="height: 700px;">
+            <RadzenCard Style="width:100%; height:100%; min-height:700px; border-radius:20px;"
+                        class="p-4 shadow-sm bg-white mb-4">
                 <div class="d-flex flex-column h-100">
-
-                    <!-- Header + Refresh Button -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="flex-grow-1 text-center">
-                            <h5 class="fw-bold text-primary m-0">📅 Filter Month-Year</h5>
+                            <h5 class="fw-bold text-primary m-0">📅 Filter tracking-Year</h5>
                         </div>
-
                         <button class="btn btn-outline-primary shadow-sm d-flex align-items-center gap-1 px-3 py-1 rounded-pill"
                                 title="Refresh Data"
                                 @onclick="RefreshData"
@@ -35,119 +30,437 @@
                             <span class="fw-semibold">Refresh</span>
                         </button>
                     </div>
-
-
-                    <!-- Search Input -->
                     <div class="input-group mb-3">
                         <span class="input-group-text bg-light border-0">🔍</span>
-                        <input type="text"
-                               class="form-control border-0 shadow-sm"
-                               placeholder="Search Month or Year..."
+                        <input type="text" class="form-control border-0 shadow-sm"
+                               placeholder="Search tracking or Year..."
                                @bind="searchFilter"
                                @bind:event="oninput"/>
                     </div>
-
-                    <!-- Scrollable List -->
                     <div class="flex-grow-1 overflow-auto">
                         <ul class="list-group list-group-flush">
-                            <Virtualize Items="FilteredMonthYearPairs" Context="pair" ItemSize="60">
+                            <Virtualize Items="FilteredtrackingYearPairs" Context="pair" ItemSize="60">
                                 <ItemContent>
                                     <li class="list-group-item list-group-item-action rounded-3 my-1"
                                         style="cursor: pointer;"
-                                        @onclick="@(() => OnMonthYearSelected(pair.Month, pair.Year))">
+                                        @onclick="@(() => OntrackingYearSelected(pair.tracking, pair.Year))">
                                         <div class="d-flex flex-column">
-                                            <span class="fw-semibold text-dark">@pair.Month @pair.Year</span>
+                                            <span class="fw-semibold text-dark">@pair.tracking @pair.Year </span>
                                             <small class="text-muted">Click to load entries</small>
                                         </div>
                                     </li>
                                 </ItemContent>
                             </Virtualize>
                         </ul>
-                        @if (!FilteredMonthYearPairs.Any())
+                        @if (!FilteredtrackingYearPairs.Any())
                         {
-                            <div class="text-muted text-center mt-4">❗ No matching month-year found.</div>
+                        <div class="text-muted text-center mt-4">❗ No matching tracking-year found.</div>
                         }
                     </div>
                 </div>
-            </div>
+            </RadzenCard>
         </div>
 
-        <!-- 📦 Right Panel -->
+        <!-- 📦 Stock Card Panel -->
         <div class="col-lg-8 col-xl-8 col-sm-12 d-flex">
-            <div class="card w-100 p-4 shadow-sm border-0 rounded-4 bg-white mb-4" style="height: 700px;">
+            <RadzenCard Style="width:100%; height:100%; min-height:700px; border-radius:20px;"
+                        class="p-4 shadow-sm bg-white mb-4">
                 <div class="d-flex flex-column h-100">
+
+                    <!-- Title -->
                     <div class="text-center mb-4">
-                        <h4 class="text-dark fw-bold">📦 Stock Card Overview</h4>
+                        <h3 class="text-success fw-bold">📦 Stock Card Overview</h3>
                     </div>
 
-                    <div class="card-body p-0 flex-grow-1 overflow-auto">
-                        @if (dataLoaded && FilteredEntries.Any())
-                        {
-                            <div class="mb-3 text-end">
-                                <button class="btn btn-outline-success btn-sm shadow-sm" @onclick="PrintFirstStockCard">
-                                    🖨️ Print Stock Card
+                    <!-- Add Form Button -->
+                    <div class="mb-4 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-success px-4 py-2 shadow-sm" @onclick="ShowInlineDialog">
+                            ✅ Add Form
+                        </button>
+                    </div>
+
+                    @if (dataLoaded && FilteredEntries.Any())
+                    {
+                    var first = FilteredEntries.First();
+
+                    <!-- Item Overview -->
+                    <div class="mb-4 bg-white p-3 rounded-3 shadow-sm">
+                        <div class="row g-3 align-items-center">
+
+                            <div class="col-md-3">
+                                <strong>📦 Item:</strong> @first.item
+                            </div>
+
+                            <div class="col-md-3">
+                                <strong>📝 Description:</strong> @first.descript
+                            </div>
+
+                            <div class="col-md-2">
+                                <strong>📐 Unit:</strong> @first.unit
+                            </div>
+
+                            <div class="col-md-2">
+                                <strong>📊 Stock:</strong> @first.stock
+                            </div>
+
+                            <div class="col-md-2">
+                                <strong>🔁 Level:</strong> @first.reorder
+                            </div>
+
+                            <div class="col-md-2 text-end">
+                                <button class="btn btn-sm btn-primary d-flex align-items-center" @onclick="() => EditItemOverview(first)">
+                                    ✏️ <span class="ms-1">Edit</span>
                                 </button>
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-hover table-bordered table-striped align-middle">
-                                    <thead class="table-primary text-center">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Reference</th>
-                                        <th>Receipt Qty</th>
-                                        <th>Issue Qty</th>
-                                        <th>Office</th>
-                                        <th>Balance Qty</th>
-                                        <th>No. of Days to Consume</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    @foreach (var entrys in FilteredEntries)
-                                    {
-                                        foreach (var entry in entrys.entries)
-                                        {
-                                            <tr class="text-center">
-                                                <td>@entry.date</td>
-                                                <td>@entry.reference</td>
-                                                <td>@entry.receiptQty</td>
-                                                <td>@entry.issueQty</td>
-                                                <td>@entry.office</td>
-                                                <td>@entry.balanceQty</td>
-                                                <td>@entry.daysToConsume</td>
-                                            </tr>
-                                        }
-                                    }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else if (dataLoaded && !FilteredEntries.Any())
-                        {
-                            <div class="alert alert-warning text-center mt-4 rounded-3 shadow-sm">
-                                ⚠️ No matching stock entries found.
-                            </div>
-                        }
+                        </div>
                     </div>
+
+
+                
+
+                    <!-- Stock Transactions Table -->
+                    <div class="table-responsive mb-5">
+                        <h5 class="fw-bold mb-3 text-primary">🔄 Stock Transactions</h5>
+
+                        <table class="table table-bordered table-striped table-hover align-middle shadow-sm">
+                            <thead class="table-primary text-center">
+                            <tr>
+                                <th>Date</th>
+                                <th>Reference</th>
+                                <th>Receipt Qty</th>
+                                <th>Issue Qty</th>
+                                <th>Office</th>
+                                <th>Balance Qty</th>
+                                <th>No. of Days to Consume</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var stockCard in FilteredEntries)
+                            {
+                            if (stockCard.entries != null)
+                            {
+                            foreach (var entry in stockCard.entries)
+                            {
+                            <tr class="text-center">
+                                <td>@entry.date</td>
+                                <td>@entry.reference</td>
+                                <td>@entry.receiptQty</td>
+                                <td>@entry.issueQty</td>
+                                <td>@entry.office</td>
+                                <td>@entry.balanceQty</td>
+                                <td>@entry.daysToConsume</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-1" title="Edit" @onclick="() => EditItemOverview(first)">
+                                        ✏️ Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger me-1" title="Delete" @onclick="() => DeleteEntry(entry)">
+                                        🗑️ Delete
+                                    </button>
+                                 
+                                </td>
+                            </tr>
+                            }
+                            }
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+
+
+                    <div class="mb-4 bg-white p-3 rounded-3 shadow-sm">
+                        <div class="d-flex flex-wrap gap-4 ">
+                            <div>
+                                <strong>🛒 Purchase Request:</strong> @first.pr_number
+                            </div>
+                            <div>
+                                <strong>📅 Date:</strong> @first.pr_date
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- PURCHASE REQUEST SECTION -->
+                    <div class="table-responsive mb-5">
+                        <h5 class="fw-bold mb-3 text-primary">📄 PURCHASE REQUEST</h5>
+                        <table class="table table-bordered table-striped table-hover align-middle shadow-sm">
+                            <thead class="table-primary text-center">
+                            <tr>
+                                <th>#</th>
+                                <th>Unit</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost</th>
+                                <th>Total Cost</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @{
+                            int counter = 1;
+                            }
+                            @foreach (var entry in FilteredEntries)
+                            {
+                            foreach (var supply in entry.list_supplies_pr)
+                            {
+                            <tr class="text-center">
+                                <td>@counter</td>
+                                <td>@supply.unit</td>
+                                <td class="text-start" style="white-space: pre-wrap; font-family: monospace;">
+                                    @supply.description
+                                </td>
+                                <td>@supply.quantity</td>
+                                <td>@supply.unitcost</td>
+                                <td>@supply.totalcost</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-1" @onclick="() => EditItemOverview(first)">✏️ Edit</button>
+                                    <button class="btn btn-sm btn-danger me-1" @onclick="() => DeletePr(supply)">🗑️ Delete</button>
+                                  
+                                </td>
+                            </tr>
+                            counter++;
+                            }
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mb-4 bg-white p-3 rounded-3 shadow-sm">
+                        <div class="d-flex flex-wrap gap-4 align-items-center mb-2">
+                            <div>
+                                <strong>🛒 Purchase Request:</strong> @first.pr_number
+                            </div>
+                            <div>
+                                <strong>📅 Date:</strong> @first.pr_date
+                            </div>
+                            <div>
+                                <strong>📄 Canvass Number:</strong> @first.canvass_no
+                            </div>
+                            <div class="ms-auto">
+                                <button class="btn btn-sm btn-primary d-flex align-items-center" @onclick="() => EditItemOverview(first)">
+                                    ✏️ <span class="ms-1">Edit Quotation</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- QUOTATION SECTION -->
+                    <div class="table-responsive mb-5">
+                        <h5 class="fw-bold mb-3 text-primary">📄 QUOTATION</h5>
+                        <table class="table table-bordered table-striped table-hover align-middle shadow-sm">
+                            <thead class="table-primary text-center">
+                            <tr>
+                                <th>#</th>
+                                <th>Unit</th>
+                                <th>Quantity</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @{
+                            int quotationCounter = 1;
+                            }
+                            @foreach (var entry in FilteredEntries)
+                            {
+                            foreach (var supply in entry.list_supplies_qu)
+                            {
+                            <tr class="text-center">
+                                <td>@quotationCounter</td>
+                                <td>@supply.unit</td>
+                                <td>@supply.quantity</td>
+                                <td>@supply.description</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-1" @onclick="() => EditItemOverview(first)">✏️ Edit</button>
+                                    <button class="btn btn-sm btn-danger me-1" @onclick="() => DeleteQu(supply)">🗑️ Delete</button>
+                                   
+                                </td>
+                            </tr>
+                            quotationCounter++;
+                            }
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+
+
+                    <!-- PURCHASE ORDER SECTION -->
+                    @foreach (var entry in FilteredEntries)
+                    {
+                    int poGroupCounter = 1;
+
+        
+
+
+                    foreach (var po in entry.list_supplies_po)
+                    {
+                    <div class="mb-4 bg-white p-4 rounded-4 shadow-sm border-start border-4 border-info">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-info">📄 PURCHASE ORDER GROUP @poGroupCounter</h5>
+                            <button class="btn btn-sm btn-primary" @onclick="() => EditItemOverview(first)">✏️ Edit PO Group</button>
+                        </div>
+
+                        <!-- PO Info -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <strong>🏢 Supplier:</strong><br/>@po.Supplier
+                            </div>
+                            <div class="col-md-4">
+                                <strong>📍 Address:</strong><br/>@po.Address
+                            </div>
+                            <div class="col-md-4">
+                                <strong>🧾 TIN Number:</strong><br/>@po.TIN
+                            </div>
+                            <div class="col-md-4">
+                                <strong>📦 PO Number:</strong><br/>@po.PONumber
+                            </div>
+                            <div class="col-md-4">
+                                <strong>📅 PO Date:</strong><br/>@po.PODate
+                            </div>
+                            <div class="col-md-4">
+                                <strong>⚙️ Procurement Mode:</strong><br/>@po.ProcurementMode
+                            </div>
+                        </div>
+
+                        <!-- PO Supplies Table -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-hover align-middle shadow-sm">
+                                <thead class="table-primary text-center">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Unit</th>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Cost</th>
+                                    <th>Total Cost</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @for (int i = 0; i < po.Supplies.Count; i++)
+                                {
+                                var supply = po.Supplies[i];
+                                <tr class="text-center">
+                                    <td>@(i + 1)</td>
+                                    <td>@supply.unit</td>
+                                    <td>@supply.description</td>
+                                    <td>@supply.quantity</td>
+                                    <td>@supply.unitcost</td>
+                                    <td>@supply.totalcost</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary me-1" @onclick="() => EditItemOverview(first)">✏️ Edit</button>
+                                        <button class="btn btn-sm btn-danger me-1" @onclick="() => DeletePo(supply)">🗑️ Delete</button>
+                                       
+
+                                    </td>
+                                </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+
+                      
+                    </div>
+                    poGroupCounter++;
+                    }
+                    }
+
+
+                    <!-- INSPECTION SECTION -->
+                    @foreach (var entry in FilteredEntries)
+                    {
+                    int insGroupCounter = 1;
+
+                    foreach (var insGroup in entry.list_supplies_ins)
+                    {
+                    <div class="mb-4 bg-white p-4 rounded-4 shadow-sm border-start border-4 border-warning">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-warning">📄 INSPECTION GROUP @insGroupCounter</h5>
+                            <button class="btn btn-sm btn-primary" @onclick="() => EditItemOverview(first)">✏️ Edit Inspection Group</button>
+                        </div>
+
+                        <!-- Inspection Info -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <strong>📝 Inspection Number:</strong><br/>@insGroup.InspectionNumber
+                            </div>
+                            <div class="col-md-6">
+                                <strong>📅 Inspection Date:</strong><br/>@insGroup.InspectionDate
+                            </div>
+                        </div>
+
+                        <!-- Inspection Items Table -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-hover align-middle shadow-sm">
+                                <thead class="table-warning text-center">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Unit</th>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Cost</th>
+                                    <th>Total Cost</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @for (int i = 0; i < insGroup.Ins.Count; i++)
+                                {
+                                var supply = insGroup.Ins[i];
+                                <tr class="text-center">
+                                    <td>@(i + 1)</td>
+                                    <td>@supply.unit</td>
+                                    <td>@supply.description</td>
+                                    <td>@supply.quantity</td>
+                                    <td>@supply.unitcost</td>
+                                    <td>@supply.totalcost</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary me-1" @onclick="() => EditItemOverview(first)">✏️ Edit</button>
+                                        <button class="btn btn-sm btn-danger me-1" @onclick="() => DeleteIns(supply)">🗑️ Delete</button>
+                                      
+                                    </td>
+                                </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    insGroupCounter++;
+                    }
+                    }
+                    }
+                    else if (dataLoaded && !FilteredEntries.Any())
+                    {
+                    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                        <RadzenImage Path="image/community.svg" Style="width: 30rem;" AlternateText="community" />
+
+
+                    </div>
+                    }
                 </div>
-            </div>
+            </RadzenCard>
         </div>
 
     </div>
 </section>
 
 @code {
+// ✅ all your C# code-behind remains the same (unchanged)
+}
+
+
+@code {
     private List<StockCardData> stock_list = new();
     private List<StockCardData> FilteredEntries = new();
-
-    private StockCardData report_stock = new();
-    
+    [Parameter] public EventCallback OnFormSubmitted { get; set; }
     private bool isLoading = false;
     private bool hasError = false;
     private bool dataLoaded = false;
     private bool isRefreshing = false;
 
-    private string selectedMonth = "";
+    private string selectedtracking = "";
     private string selectedYear = "";
     private string searchFilter = "";
 
@@ -165,9 +478,9 @@
         isRefreshing = false;
     }
 
-    private async Task OnMonthYearSelected(string month, string year)
+    private async Task OntrackingYearSelected(string tracking, string year)
     {
-        selectedMonth = month;
+        selectedtracking = tracking;
         selectedYear = year;
         await LoadReport();
     }
@@ -197,23 +510,135 @@
     private void ApplyFilters()
     {
         FilteredEntries = stock_list
-            .Where(x => x.month == selectedMonth && x.year.ToString() == selectedYear)
+            .Where(x => x.tracking == selectedtracking)
             .ToList();
     }
 
-    private List<MonthYearPair> FilteredMonthYearPairs =>
+    private List<trackingYearPair> FilteredtrackingYearPairs =>
         stock_list
             .Where(x =>
                 string.IsNullOrWhiteSpace(searchFilter) ||
-                x.month.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ||
-                x.year.ToString().Contains(searchFilter)
+                x.tracking.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) 
             )
-            .Select(x => new MonthYearPair { Month = x.month, Year = x.year.ToString() })
-            .DistinctBy(x => new { x.Month, x.Year })
+            .Select(x => new trackingYearPair { tracking = x.tracking })
+            .DistinctBy(x => new { x.tracking, x.Year })
             .OrderByDescending(x => x.Year)
-            .ThenByDescending(x => x.Month)
+            .ThenByDescending(x => x.tracking)
             .ToList();
 
+
+    private async Task EditItemOverview(StockCardData stock)
+    {
+        var dialogOptions = new DialogOptions { Width = "1481px", Height = "732px" };
+        var result = await DialogService.OpenAsync<EditStockForm>("Edit Project",
+            new Dictionary<string, object>
+                { { "stockCard", stock }, { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) } },
+            dialogOptions);
+    }
+
+    private async Task EditQuotation(StockCardData stock)
+    {
+        var dialogOptions = new DialogOptions { Width = "1481px", Height = "732px" };
+        var result = await DialogService.OpenAsync<EditStockForm>("Edit Project",
+            new Dictionary<string, object>
+                { { "stockCard", stock }, { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) } },
+            dialogOptions);
+    }
+
+
+    private async Task EditPurchaseOrder(StockCardData stock)
+    {
+        var dialogOptions = new DialogOptions { Width = "1481px", Height = "732px" };
+        var result = await DialogService.OpenAsync<EditStockForm>(
+            "Edit Purchase Order",
+            new Dictionary<string, object>
+            {
+                { "stockCard", stock },
+                { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) }
+            },
+            dialogOptions
+        );
+    }
+
+    private async Task EditInspection(StockCardData stock)
+    {
+        var dialogOptions = new DialogOptions { Width = "1481px", Height = "732px" };
+        var result = await DialogService.OpenAsync<EditStockForm>("Edit Project",
+            new Dictionary<string, object>
+                { { "stockCard", stock }, { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) } },
+            dialogOptions);
+    }
+
+
+    private async Task onSaveSuccess()
+    {
+        await OnInitializedAsync();
+        StateHasChanged();
+    }
+
+   
+    private async Task PrintSingleEntry(StockCardData stockCard, StockClass entry)
+    {
+        if (entry == null)
+        {
+            Console.WriteLine("No entry selected.");
+            return;
+        }
+
+        await JS.InvokeVoidAsync("window.printStockCard", new
+        {
+            item = stockCard.item,
+            descript = stockCard.descript,
+            unit = stockCard.unit,
+            stock = stockCard.stock,
+            reorder = stockCard.reorder,
+            entries = new[]
+            {
+                new
+                {
+                    date = entry.date,
+                    reference = entry.reference,
+                    receiptQty = entry.receiptQty,
+                    issueQty = entry.issueQty,
+                    office = entry.office,
+                    balanceQty = entry.balanceQty,
+                    daysToConsume = entry.daysToConsume
+                }
+            }
+        });
+    }
+
+// Placeholder methods
+    private void EditEntry(StockClass entry)
+    {
+        Console.WriteLine("Edit clicked for: " + entry.reference);
+    }
+
+    private void DeleteEntry(StockClass entry)
+    {
+    }
+
+
+    private async Task PrintPr(StockCardData stockCard)
+    {
+        if (stockCard == null || stockCard.list_supplies_pr == null || !stockCard.list_supplies_pr.Any())
+            return;
+
+        await JS.InvokeVoidAsync("window.printPurchaseRequestFromStockCard", new
+        {
+            pr_number = stockCard.pr_number,
+            pr_date = stockCard.pr_date,
+
+            list_supplies_pr = stockCard.list_supplies_pr.Select(s => new
+            {
+                unit = s.unit,
+                description = s.description,
+                quantity = s.quantity,
+                unitcost = s.unitcost,
+                totalcost = s.totalcost
+            })
+        });
+    }
     
     
     private async Task PrintFirstStockCard()
@@ -227,45 +652,267 @@
 
         await JS.InvokeVoidAsync("open", $"/api/Report/StockReport{query}", "_blank");
     }
-    
-    /*private async Task PrintFirstStockCard()
+
+
+    private async Task PrintQu(StockCardData stockCard)
     {
-        if (FilteredEntries == null || !FilteredEntries.Any())
-        {
-            Console.WriteLine("No stock data found.");
+        if (stockCard == null || stockCard.list_supplies_qu == null || stockCard.list_supplies_qu.Count == 0)
             return;
-        }
-        
-        
 
-        var firstStock = FilteredEntries.First();
-
-        if (firstStock.entries == null || !firstStock.entries.Any())
+        await JS.InvokeVoidAsync("printQuotation", new
         {
-            Console.WriteLine("No entries found in first stock card.");
-            return;
-        }
-
-        await JS.InvokeVoidAsync("window.printStockCard", new
-        {
-            entries = firstStock.entries.Select(e => new
+            item = stockCard.item,
+            descript = stockCard.descript,
+            unit = stockCard.unit,
+            qu_date = stockCard.date.ToString("yyyy-MM-dd"),
+            qu_number = stockCard.pr_number,
+            qu_canvass_no = stockCard.canvass_no,
+            list_supplies_qu = stockCard.list_supplies_qu.Select(q => new
             {
-                date = e.date,
-                reference = e.reference,
-                receiptQty = e.receiptQty,
-                issueQty = e.issueQty,
-                office = e.office,
-                balanceQty = e.balanceQty,
-                daysToConsume = e.daysToConsume
+                q.unit,
+                q.description,
+                q.quantity,
+                q.unitcost,
+                q.totalcost
             })
         });
     }
-    */
 
-    public class MonthYearPair
+    
+    private async Task PrintPoById(StockCardData stockCard, string poGroupId)
     {
-        public string Month { get; set; }
+        if (stockCard == null || string.IsNullOrEmpty(poGroupId))
+            return;
+
+        var group = stockCard.list_supplies_po.FirstOrDefault(p => p.Id == poGroupId);
+        if (group == null)
+            return;
+
+        await JS.InvokeVoidAsync("printSinglePurchaseOrder", new
+        {
+            supplier = group.Supplier,
+            address = group.Address,
+            tin = group.TIN,
+            po_number = group.PONumber,
+            po_date = group.PODate,
+            procurement_mode = group.ProcurementMode,
+            supplies = group.Supplies.Select(s => new
+            {
+                s.unit,
+                s.description,
+                s.quantity,
+                s.unitcost,
+                s.totalcost
+            }).ToList()
+        });
+    }
+
+    private async Task PrintSuppliesEachPage(List<SuppliesClass> supplies)
+    {
+        if (supplies == null || supplies.Count == 0)
+            return;
+
+        await JS.InvokeVoidAsync("printEachSupplyItemPerPage", supplies.Select(s => new
+        {
+            s.description,
+            s.quantity,
+            s.unitcost,
+            s.totalcost
+        }).ToList());
+    }
+
+    
+    private async Task PrintAllPo(StockCardData stockCard)
+    {
+        if (stockCard == null || stockCard.list_supplies_po == null || stockCard.list_supplies_po.Count == 0)
+            return;
+
+        await JS.InvokeVoidAsync("printAllPoIndividuallyPerPage", new
+        {
+            list_supplies_po = stockCard.list_supplies_po.Select(group => new
+            {
+                supplier = group.Supplier,
+                address = group.Address,
+                tin = group.TIN,
+                po_number = group.PONumber,
+                po_date = group.PODate,
+                procurement_mode = group.ProcurementMode,
+                supplies = group.Supplies.Select(s => new
+                {
+                    s.unit,
+                    s.description,
+                    s.quantity,
+                    s.unitcost,
+                    s.totalcost
+                }).ToList()
+            }).ToList()
+        });
+    }
+    
+    
+    
+    
+    
+    
+
+    private async Task PrintIns(StockCardData stockCard, InsSuppliesClass supply)
+    {
+        if (supply == null) return;
+
+        var ins = stockCard.list_supplies_ins.FirstOrDefault(g => g.Ins.Contains(supply));
+        if (ins == null) return;
+
+        await JS.InvokeVoidAsync("window.printStockCardIns", new
+        {
+            item = stockCard.item,
+            descript = stockCard.descript,
+            unit = stockCard.unit,
+            inspectionNumber = ins.InspectionNumber,
+            inspectionDate = ins.InspectionDate,
+            supply = new
+            {
+                unit = supply.unit,
+                description = supply.description,
+                quantity = supply.quantity,
+                unitcost = supply.unitcost,
+                totalcost = supply.totalcost
+            }
+        });
+    }
+
+
+    private async Task PrintPr(StockCardData stockCard, SuppliesClass pr)
+    {
+    }
+
+    private void EditPr(PrSuppliesClass supply)
+    {
+// Implement logic to edit PR item
+    }
+
+    private void DeletePr(PrSuppliesClass supply)
+    {
+// Implement logic to delete PR item
+    }
+
+
+    private void EditPo(SuppliesClass po)
+    {
+// Show edit modal or set selectedPo = po
+    }
+
+    private void DeletePo(SuppliesClass po)
+    {
+// Remove item from list, confirm deletion, etc.
+    }
+
+
+// Placeholder methods Qu
+    private void EditQu(QuSuppliesClass qu)
+    {
+    }
+
+    private void DeleteQu(QuSuppliesClass qu)
+    {
+    }
+
+
+// Placeholder methods Qu
+    private void EditIns(InsSuppliesClass ins)
+    {
+    }
+
+    private void DeleteIns(InsSuppliesClass ins)
+    {
+    }
+
+
+    public class trackingYearPair
+    {
+        public string tracking { get; set; }
         public string Year { get; set; }
+    }
+
+
+    async Task ShowInlineDialog()
+    {
+        await DialogService.OpenAsync<SaveStockForm>("",
+            new Dictionary<string, object>()
+            {
+                { "OnFormSubmitted", EventCallback.Factory.Create(this, OnFormSubmitted) }
+            },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Resize = OnResize,
+                Drag = OnDrag,
+                Width = Settings != null ? Settings.Width : "1481px",
+                Height = Settings != null ? Settings.Height : "732px",
+                Left = Settings != null ? Settings.Left : null,
+                Top = Settings != null ? Settings.Top : null
+            });
+        
+        await RefreshData();
+    }
+
+    void OnDrag(System.Drawing.Point point)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Left = $"{point.X}px";
+        Settings.Top = $"{point.Y}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    void OnResize(System.Drawing.Size size)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Width = $"{size.Width}px";
+        Settings.Height = $"{size.Height}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    DialogSettings _settings;
+
+    public DialogSettings Settings
+    {
+        get { return _settings; }
+        set
+        {
+            if (_settings != value)
+            {
+                _settings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+
+
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
+    }
+
+    public class DialogSettings
+    {
+        public string Left { get; set; }
+        public string Top { get; set; }
+        public string Width { get; set; }
+        public string Height { get; set; }
     }
 
 }

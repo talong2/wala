@@ -1,4 +1,7 @@
-﻿@page "/Validator/"
+﻿@page "/"
+@layout NoLayout
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
 @using System.Text.Json
 <style>
     .start-54 {
@@ -45,36 +48,17 @@
 
 </style>
 
-<div id="overlay">
-    <div style="bottom:0;position:absolute;width:100%;margin-top:10px; z-index:1">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#0099ff" fill-opacity="1" d="M0,64L48,101.3C96,139,192,213,288,245.3C384,277,480,267,576,240C672,213,768,171,864,176C960,181,1056,235,1152,250.7C1248,267,1344,245,1392,234.7L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
-    </div>
-    <div style="z-index:500; position:relative">
-        <div>
-            <div style="width:100%;background-color:rgba(255, 255, 255, 1)">
-                <img style="width:100%;height:auto;max-width:700px" src="images/pgassuperapplogo-nobg_new.png" />
-            </div>
-            <br />
-            <center>
-                <div style="width:67%;align-items:center">
 
-                    <h1>
-                        Document Validator
-                    </h1>
-                    <p style="text-align:center">
-                        Click on Scan then point the camera on the QR code of the document.
-                    </p>
-                    <div class="btn btn-primary btn-lg" @onclick="@(()=>ShowScanner("DataValidator",""))">
-                        <i class="fa-solid fa-camera"></i><span> Scan</span>
-                    </div>
-                    <a class="btn btn-primary btn-lg m-2" href=""><i class="fa-regular fa-reply"></i> Back</a>
-                </div>
-            </center>
-        </div>
-    </div>
-</div>
+
+
+
+
 <QRScanner @ref="_qRScanner" ScanResult="QRResult" />
-
+<center>
+    <div class="btn btn-dark  btn-lg" @onclick="@(()=>ShowScanner("DataValidator",""))">
+        <i class="fa-solid fa-camera"></i><span> Scan</span>
+    </div>
+</center>
 @code {
     string Event;
     string MenuClicked = "Scan";
@@ -84,82 +68,184 @@
     double totalcount = 0;
     string qr = "";
     QRScanner _qRScanner;
+    [Inject] public HttpClient Http { get; set; }
+    [Inject] public NavigationManager Nav { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
 
     IEnumerable<string> EventName = new List<string> { "Governor's Cup Profiling", "Caraga Regional Athletic Meet", "Sample for QR" };
     List<(string storageId, string dataId)> StoredData = new List<(string, string)>();
 
-    public async Task DownloadData()
-    {
-        var response = await Http.GetFromJsonAsync<ApiResponse>(Http.BaseAddress + $"api/ModuleBuilder/GetTableData?pagenumber={1}&pagesize={1}&formname={Event}");
-        if (response != null)
-        {
-            totalcount = response.TotalCount;
-
-            if (totalcount > 0)
-            {
-                overlaytext = $" out of {totalcount} Downloaded";
-                showoverlay = true;
-                var records = new List<JsonElement>();
-                var counter = 1;
-                var storagenumber = 1;
-                for (int i = 1; i <= totalcount; i++)
-                {
-                    var responseJson = await Http.GetFromJsonAsync<List<JsonElement>>(Http.BaseAddress + $"api/ModuleBuilder/GetTableDataNormalized?pagenumber={i}&pagesize={1}&formname={Event}");
-                    foreach (var record in responseJson)
-                    {
-                        var id = record.GetProperty("_id").GetString();
-                        StoredData.Add(($"{Event}_{storagenumber}", id));
-                        records.Add(record);
-                        currentRecord = i;
-                        StateHasChanged();
-                    }
-                    if (counter == 5 || i == totalcount)
-                    {
-                        storagenumber++;
-                        await localStorage.RemoveItemAsync($"{Event}_{storagenumber}");
-                        await localStorage.SetItemAsync($"{Event}_{storagenumber}", records);
-                        records = new List<JsonElement>();
-                        counter = 0;
-                    }
-                    counter++;
-                }
-                await localStorage.SetItemAsync($"{Event}_library_ref", StoredData);
-                showoverlay = false;
-
-            }
-        }
-    }
-    private async void QRResult((string, string,string) result)
+  
+    private async void QRResult((string, string, string) result)
     {
         try
         {
-             qr = result.Item1;
-            var field = result.Item2;
-            
-            NotificationService.Notify(new NotificationMessage
-                {
-                    Style = "position: fixed; top: 35; left: 50%; transform: translateX(-50%);",
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Notice",
-                    Detail = "QR Successfully Scanned",
-                    Duration = 4000
-                });
+            var qrData = result.Item1;   // the actual scanned QR string
+            var field = result.Item2;    // maybe extra info (e.g., field name)
+            var extra = result.Item3;    // third part if needed
+
             await _qRScanner.CloseAsync();
 
-            await DialogService.OpenAsync<ScannedDataViewer>($"Scan Result",
-               new Dictionary<string, object>() { { "value", qr } },
-               new DialogOptions() { Width = "80%", Height = "80%", Resizable = true, Draggable = true });
+            await HandleQrLogin(qrData); // now passing the actual QR string
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(ex.Message);
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "QR Error",
+                Detail = ex.Message,
+                Duration = 3000
+            });
         }
-
     }
     private async void ShowScanner(string field,string source)
     {
         await _qRScanner.OpenScanner(field, source);
         // await Task.Delay(1000);
 
+    }
+    
+        private async Task HandleQrLogin(string qrData)
+    {
+        if (string.IsNullOrWhiteSpace(qrData))
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Invalid QR",
+                Detail = "QR code is empty or unreadable.",
+                Duration = 3000
+            });
+            return;
+        }
+
+        var parts = qrData.Split('|');
+        if (parts.Length != 2)
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Invalid QR",
+                Detail = "QR code format must be email|password.",
+                Duration = 3000
+            });
+            return;
+        }
+
+        var email = parts[0];
+        var password = parts[1];
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/login", new { Email = email, Password = password });
+
+            if (response.IsSuccessStatusCode)
+            {
+                NotificationService?.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Login Successful",
+                    Detail = $"Welcome {email}!",
+                    Duration = 3000
+                });
+
+                await Task.Delay(1000);
+                Nav?.NavigateTo("/stock", true);
+            }
+            else
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                NotificationService?.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Login Failed",
+                    Detail = msg,
+                    Duration = 3000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 3000
+            });
+        }
+    }
+    async Task ShowScannerDialog()
+    {
+        var result = await DialogService.OpenAsync<QRScanner>(
+            "QR Scanner",
+            new Dictionary<string, object>()
+            {
+                { "UseBuiltinDiv", false } // render Radzen-friendly body
+            },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = "900px",
+                Height = "600px"
+            });
+
+        if (result is ValueTuple<string, string, string> scan)
+        {
+            var (code, field, source) = scan;
+            Console.WriteLine($"Scanned: {code}, Field: {field}, Source: {source}");
+        }
+    }
+    
+    void OnDrag(System.Drawing.Point point)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
+
+        if (Settings == null)
+        {
+            Settings = new Stock.DialogSettings();
+        }
+
+        Settings.Left = $"{point.X}px";
+        Settings.Top = $"{point.Y}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    void OnResize(System.Drawing.Size size)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
+
+        if (Settings == null)
+        {
+            Settings = new Stock.DialogSettings();
+        }
+
+        Settings.Width = $"{size.Width}px";
+        Settings.Height = $"{size.Height}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+    
+    Stock.DialogSettings _settings;
+
+    public Stock.DialogSettings Settings
+    {
+        get { return _settings; }
+        set
+        {
+            if (_settings != value)
+            {
+                _settings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+    
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
     }
 }

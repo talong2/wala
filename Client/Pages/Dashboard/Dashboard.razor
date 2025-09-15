@@ -1,0 +1,152 @@
+﻿@page "/dashboard"
+@using Radzen
+@using System
+
+<style>
+    /* Rounded grid wrapper */
+    .custom-grid {
+        border-radius: 12px;
+        overflow: hidden; /* keeps rows inside the radius */
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    /* Optional: rounded header row */
+    .custom-grid .rz-datatable-thead th {
+        background: #e5e7eb; /* light gray header */
+        font-weight: 600;
+        border: none;
+    }
+
+    /* Optional: soften row dividers */
+    .custom-grid .rz-datatable-data td {
+        border-bottom: 1px solid #f0f0f0;
+    }
+</style>
+
+<RadzenCard Style="width:100%; margin-bottom:20px; border-bottom:2px solid dodgerblue; border-radius:16px;">
+    <RadzenLabel Text="Schedule Start Month:"/>
+    <RadzenSelectBar @bind-Value="@events"
+                     TextProperty="Text" ValueProperty="Value"
+                     Data="@(Enum.GetValues(typeof(Radzen.Month)).Cast<Radzen.Month>().Select(m => new { Text = m.ToString(), Value = m }))"
+                     Size="ButtonSize.Small" class="rz-display-xl-flex"/>
+</RadzenCard>
+
+
+<RadzenScheduler @ref=@scheduler
+                 SlotRender=@OnSlotRender
+                 style="height: 768px; border-radius: 12px; overflow: hidden;"
+                 TItem="Appointment"
+                 Data=@appointments
+                 StartProperty="Start"
+                 EndProperty="End"
+                 ShowHeader=@showHeader
+                 TextProperty="Text"
+                 SelectedIndex="2"
+                 SlotSelect=@OnSlotSelect
+                 AppointmentSelect=@OnAppointmentSelect
+                 AppointmentRender=@OnAppointmentRender
+                 DaySelect="@OnDaySelect"
+                 AppointmentMove=@OnAppointmentMove>
+    <RadzenDayView/>
+    <RadzenWeekView/>
+    <RadzenMonthView/>
+</RadzenScheduler>
+
+
+
+@code {
+    RadzenScheduler<Appointment> scheduler;
+   
+    Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
+
+    bool showHeader = true;
+
+    IList<Appointment> appointments = new List<Appointment>
+    {
+
+        new Appointment { Start = new DateTime(2025, 1, 1), End = new DateTime(2025, 1, 1), Text = "New Year's Day" },
+        new Appointment { Start = new DateTime(2025, 4, 18), End = new DateTime(2025, 4, 21), Text = "Easter Holiday" },
+        new Appointment { Start = new DateTime(2025, 5, 1), End = new DateTime(2025, 5, 1), Text = "Labor Day" },
+        new Appointment { Start = new DateTime(2025, 7, 4), End = new DateTime(2025, 7, 4), Text = "Independence Day" },
+        new Appointment { Start = new DateTime(2025, 11, 27), End = new DateTime(2025, 11, 27), Text = "Thanksgiving" },
+        new Appointment { Start = new DateTime(2025, 12, 24), End = new DateTime(2025, 12, 26), Text = "Christmas Holiday" },
+        new Appointment { Start = new DateTime(2025, 12, 31), End = new DateTime(2025, 12, 31), Text = "New Year's Eve" },
+
+    };
+
+    void OnDaySelect(SchedulerDaySelectEventArgs args)
+    {
+      
+    }
+
+    void OnSlotRender(SchedulerSlotRenderEventArgs args)
+    {
+// Highlight today in month view
+        if (args.View.Text == "Month" && args.Start.Date == DateTime.Today)
+        {
+            args.Attributes["style"] = "background: var(--rz-scheduler-highlight-background-color, rgba(255,220,40,.2));";
+        }
+
+// Highlight working hours (9-18)
+        if ((args.View.Text == "Week" || args.View.Text == "Day") && args.Start.Hour > 8 && args.Start.Hour < 19)
+        {
+            args.Attributes["style"] = "background: var(--rz-scheduler-highlight-background-color, rgba(255,220,40,.2));";
+        }
+    }
+
+    async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
+    {
+        
+
+      
+    }
+
+    async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<Appointment> args)
+    {
+       
+
+        await scheduler.Reload();
+    }
+
+    void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<Appointment> args)
+    {
+// Never call StateHasChanged in AppointmentRender - would lead to infinite loop
+
+        if (args.Data.Text == "Birthday")
+        {
+            args.Attributes["style"] = "background: red";
+        }
+    }
+
+    async Task OnAppointmentMove(SchedulerAppointmentMoveEventArgs args)
+    {
+        var draggedAppointment = appointments.FirstOrDefault(x => x == args.Appointment.Data);
+
+        if (draggedAppointment != null)
+        {
+            var duration = draggedAppointment.End - draggedAppointment.Start;
+
+            if (args.SlotDate.TimeOfDay == TimeSpan.Zero)
+            {
+                draggedAppointment.Start = args.SlotDate.Date.Add(draggedAppointment.Start.TimeOfDay);
+            }
+            else
+            {
+                draggedAppointment.Start = args.SlotDate;
+            }
+
+            draggedAppointment.End = draggedAppointment.Start.Add(duration);
+
+            await scheduler.Reload();
+        }
+    }
+
+    public class Appointment
+    {
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+
+        public string Text { get; set; }
+    }
+
+}

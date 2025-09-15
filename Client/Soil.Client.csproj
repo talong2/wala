@@ -16,4 +16,21 @@
     <ProjectReference Include="..\Shared\Soil.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\image\" />
+    <Folder Include="wwwroot\vendor\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\handwritten\handwritten.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\handwritten\handwritten.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\viewerjs\viewer.min.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\viewerjs\viewer.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\viewerjs\viewerjs.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\qrcode.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\zxing.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\zxingjs1.1.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\zxingjs1.2.js" />
+  </ItemGroup>
+
 </Project>

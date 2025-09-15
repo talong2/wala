@@ -1,0 +1,67 @@
+﻿@page "/inventory-home"
+@using Radzen
+
+<RadzenCard Style="width:100%; height:90vh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; 
+                  box-shadow:0 4px 12px rgba(0,0,0,0.1); background:#f3f4f6;">
+    <ChildContent>
+
+        <!-- 🔹 Top Section with Day / Month / Year dropdowns -->
+        <div style="display:flex; justify-content:center; gap:1rem; margin-top:1rem;">
+            <RadzenDropDown
+                @bind-Value="selectedDay"
+                Data="@days"
+                Placeholder="Day"
+                Style="width:100px;" />
+
+            <RadzenDropDown
+                @bind-Value="selectedMonth"
+                Data="@months"
+                Placeholder="Month"
+                Style="width:120px;" />
+
+            <RadzenDropDown
+                @bind-Value="selectedYear"
+                Data="@years"
+                Placeholder="Year"
+                Style="width:120px;" />
+        </div>
+
+        <!-- 🔹 Main Content -->
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <RadzenImage Path="image/community.svg" Style="width: 30rem;" AlternateText="community" />
+
+           
+        </div>
+    </ChildContent>
+</RadzenCard>
+
+@code {
+private int? selectedDay;
+private string selectedMonth;
+private int? selectedYear;
+
+private int? selectedCategory;
+
+private List<int> days = Enumerable.Range(1, 31).ToList();
+
+private List<string> months = new List<string>
+{
+"January", "February", "March", "April", "May", "June",
+"July", "August", "September", "October", "November", "December"
+};
+
+private List<int> years = Enumerable.Range(2000, 51).ToList(); // 2000–2050
+
+private List<Category> categories = new List<Category>
+{
+new Category { Id = 1, Name = "Electronics" },
+new Category { Id = 2, Name = "Furniture" },
+new Category { Id = 3, Name = "Clothing" }
+};
+
+public class Category
+{
+public int Id { get; set; }
+public string Name { get; set; }
+}
+}
