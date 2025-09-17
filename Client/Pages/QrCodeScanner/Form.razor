@@ -1,0 +1,113 @@
+﻿@page "/qr-entry"
+@using Soil.Shared.Models
+@inject HttpClient Http
+
+<h3 class="text-xl font-bold mb-4">QR Code Entry Form</h3>
+
+<EditForm Model="@qrDto" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="block font-medium">Client ID</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.ClientId" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Farm ID</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.FarmId" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Created By ID</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.created_by_id" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Number of Holes</label>
+        <InputNumber class="border rounded p-2 w-full" @bind-Value="qrDto.num_hole" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Unit</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.Unit" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Lot Size</label>
+        <InputNumber class="border rounded p-2 w-full" @bind-Value="qrDto.LotSize" step="0.01" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Date</label>
+        <InputDate class="border rounded p-2 w-full" @bind-Value="qrDto.date" />
+    </div>
+
+ 
+    <div class="mb-3">
+        <label class="block font-medium">Firstname</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.Firstname" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Middlename</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.Middlename" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Lastname</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.Lastname" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Email</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label class="block font-medium">Mobile Number</label>
+        <InputText class="border rounded p-2 w-full" @bind-Value="qrDto.MobileNumber" />
+    </div>
+
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        Save Entry
+    </button>
+</EditForm>
+
+@if (resultMessage != null)
+{
+    <div class="mt-4 p-3 border rounded bg-gray-50">
+        <strong>Result:</strong> @resultMessage
+    </div>
+}
+
+@code {
+    private QrCodeClass qrDto = new();
+    private string? resultMessage;
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/qrcode/insert", qrDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var id = await response.Content.ReadAsStringAsync();
+                resultMessage = $"✅ QR Entry saved successfully! ID: {id}";
+                qrDto = new QrCodeClass(); // reset form
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                resultMessage = $"❌ Error: {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            resultMessage = $"⚠️ Exception: {ex.Message}";
+        }
+    }
+
+
+}

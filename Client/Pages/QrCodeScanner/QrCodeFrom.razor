@@ -1,0 +1,109 @@
+@page "/qrcode/{_id}"
+@using Soil.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<h3>QR Code Details</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (qrItem == null)
+{
+    <p class="text-danger">QR record not found.</p>
+}
+else
+{
+    <EditForm Model="qrItem" OnValidSubmit="SaveQrItem">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+
+        <div class="form-group">
+            <label>Firstname</label>
+            <InputText class="form-control" @bind-Value="qrItem.Firstname"/>
+        </div>
+
+        <div class="form-group">
+            <label>Middlename</label>
+            <InputText class="form-control" @bind-Value="qrItem.Middlename"/>
+        </div>
+
+        <div class="form-group">
+            <label>Lastname</label>
+            <InputText class="form-control" @bind-Value="qrItem.Lastname"/>
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <InputText class="form-control" @bind-Value="qrItem.Email"/>
+        </div>
+
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <InputText class="form-control" @bind-Value="qrItem.MobileNumber"/>
+        </div>
+
+        <div class="form-group">
+            <label>Project Type</label>
+            <InputText class="form-control" @bind-Value="qrItem.project_type"/>
+        </div>
+
+        <div class="form-group">
+            <label>Crops</label>
+            <InputText class="form-control" @bind-Value="qrItem.crops"/>
+        </div>
+
+        <!-- Add other fields as needed -->
+
+        <button class="btn btn-primary" type="submit">Save</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public string _id { get; set; }
+
+    private QrCodeClass qrItem = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(_id))
+        {
+            try
+            {
+                qrItem = await Http.GetFromJsonAsync<QrCodeClass>($"api/qrcode/view_qr/{_id}");
+            }
+            catch
+            {
+                qrItem = null;
+            }
+        }
+
+        isLoading = false;
+    }
+
+    private async Task SaveQrItem()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/qrcode/update", qrItem);
+
+            if (response.IsSuccessStatusCode)
+            {
+// Navigate to a success page or show a notification
+                Nav.NavigateTo("/success");
+            }
+            else
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                Console.Error.WriteLine($"Update failed: {msg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving QR item: {ex.Message}");
+        }
+    }
+
+}
