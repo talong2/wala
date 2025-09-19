@@ -87,7 +87,7 @@ public class PrSuppliesClass
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; } = ObjectId.GenerateNewId().ToString();
-    public string unit { get; set; } = string.Empty;
+    public string? unit { get; set; } = string.Empty;
     public string description { get; set; } = string.Empty;
    public decimal? quantity { get; set; }
     public decimal? unitcost { get; set; }

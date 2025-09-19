@@ -161,8 +161,10 @@
                                                                     <td>@supply.unitcost</td>
                                                                     <td>@supply.totalcost</td>
                                                                     <td>
-                                                                        <button class="btn btn-sm btn-primary me-1 p-0" @onclick="() => EditItemOverview(first)">✏️ Edit</button>
-                                                                        <button class="btn btn-sm btn-danger me-1 p-0" @onclick="() => DeletePr(supply)">🗑️ Delete</button>
+                                                                        <div class="d-flex align-items-center justify-content-center purchase-button">
+                                                                            <button class="btn btn-sm purchase-edit" @onclick="() => EditItemOverview(first)"><i class="bi bi-pen-fill"></i></button>
+                                                                            <button class="btn btn-sm purchase-delete" @onclick="() => EditItemOverview(first)"><i class="bi bi-trash-fill"></i></button>
+                                                                        </div>
                                                                     </td>
                                                                 </tr>
                                                                 counter++;
@@ -305,10 +307,10 @@
                                                                             <td>@supply.unitcost</td>
                                                                             <td>@supply.totalcost</td>
                                                                             <td>
-                                                                                <button class="btn btn-sm btn-primary me-1" @onclick="() => EditItemOverview(first)">✏️ Edit</button>
-                                                                                <button class="btn btn-sm btn-danger me-1" @onclick="() => DeletePo(supply)">🗑️ Delete</button>
-
-
+                                                                                <div class="d-flex align-items-center justify-content-center purchase-button">
+                                                                                    <button class="btn btn-sm purchase-edit" @onclick="() => EditItemOverview(first)"><i class="bi bi-pen-fill"></i></button>
+                                                                                    <button class="btn btn-sm purchase-delete" @onclick="() => EditItemOverview(first)"><i class="bi bi-trash-fill"></i></button>
+                                                                                </div>
                                                                             </td>
                                                                         </tr>
                                                                     }
@@ -388,9 +390,10 @@
                                                                             <td>@supply.unitcost</td>
                                                                             <td>@supply.totalcost</td>
                                                                             <td>
-                                                                                <button class="btn btn-sm btn-primary me-1" @onclick="() => EditItemOverview(first)">✏️ Edit</button>
-                                                                                <button class="btn btn-sm btn-danger me-1" @onclick="() => DeleteIns(supply)">🗑️ Delete</button>
-
+                                                                                <div class="d-flex align-items-center justify-content-center purchase-button">
+                                                                                    <button class="btn btn-sm purchase-edit" @onclick="() => EditItemOverview(first)"><i class="bi bi-pen-fill"></i></button>
+                                                                                    <button class="btn btn-sm purchase-delete" @onclick="() => EditItemOverview(first)"><i class="bi bi-trash-fill"></i></button>
+                                                                                </div>
                                                                             </td>
                                                                         </tr>
                                                                     }
@@ -420,13 +423,12 @@
                     else if (dataLoaded && !FilteredEntries.Any())
                     {
 
-                    <div class="form-details mb-5">
+                    <div class="form-details mb-4">
                         <div class="form-date-none">
                             <h6>No Form Selected</h6>
                         </div>
                         <div class="form-body-none">
                             <i class="bi bi-file-earmark-plus-fill"></i>
-                            <span>Select a Form to Display Details</span>
                         </div>
                     </div>
                     }
@@ -487,10 +489,6 @@
 
     </div>
 </section>
-
-@code {
-// ✅ all your C# code-behind remains the same (unchanged)
-}
 
 
 @code {
@@ -611,40 +609,6 @@
             { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) }
             },
             new DialogOptions { Width = "1481px", Height = "732px" });
-    }
-
-
-    private async Task EditQuotation(StockCardData stock)
-    {
-        var dialogOptions = new DialogOptions { Width = "1481px", Height = "732px" };
-        var result = await DialogService.OpenAsync<EditStockForm>("Edit Project",
-            new Dictionary<string, object>
-                { { "stockCard", stock }, { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) } },
-            dialogOptions);
-    }
-
-
-    private async Task EditPurchaseOrder(StockCardData stock)
-    {
-        var dialogOptions = new DialogOptions { Width = "1481px", Height = "732px" };
-        var result = await DialogService.OpenAsync<EditStockForm>(
-            "Edit Purchase Order",
-            new Dictionary<string, object>
-            {
-                { "stockCard", stock },
-                { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) }
-            },
-            dialogOptions
-        );
-    }
-
-    private async Task EditInspection(StockCardData stock)
-    {
-        var dialogOptions = new DialogOptions { Width = "1481px", Height = "732px" };
-        var result = await DialogService.OpenAsync<EditStockForm>("Edit Project",
-            new Dictionary<string, object>
-                { { "stockCard", stock }, { "OnFormSubmitted", EventCallback.Factory.Create(this, onSaveSuccess) } },
-            dialogOptions);
     }
 
 
