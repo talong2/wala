@@ -3,17 +3,11 @@
 
 <style>
     /* Remove white backgrounds everywhere */
-    .no-background,
-    .rz-sidebar,
-    .rz-header,
-    .rz-footer,
-    .rz-body,
-    .rz-panelmenu,
-    .rz-panelmenu .rz-navigation-item,
-    .rz-panelmenu .rz-link {
+    .rz-body {
         background: transparent !important;
         box-shadow: none !important;
         border: none !important;
+        padding: 15px !important;
     }
 
     /* Remove the dividing lines inside the sidebar menu */
@@ -48,7 +42,6 @@
     .custom-sidebar-toggle:hover {
         background-color: #444444 !important; /* lighter hover */
     }
-
 </style>
 
 
@@ -94,8 +87,8 @@
             <NavMenu/>
         </div>
     </RadzenSidebar>
-    <RadzenBody>
-        <div class="rz-p-4">
+    <RadzenBody class="bg-white">
+        <div class="rz-p-1">
             @Body
         </div>
     </RadzenBody>

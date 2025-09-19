@@ -12,7 +12,7 @@ public class StockCardData
     
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+    public string? Id { get; set; }
 
     public string tracking { get; set; } = string.Empty;
 
@@ -91,7 +91,7 @@ public class PrSuppliesClass
     public string description { get; set; } = string.Empty;
    public decimal? quantity { get; set; }
     public decimal? unitcost { get; set; }
-    public decimal totalcost { get; set; }
+    public decimal? totalcost { get; set; }
 }
 
 public class QuSuppliesClass
