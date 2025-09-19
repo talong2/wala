@@ -1,5 +1,6 @@
 ﻿@page "/stock"
 @using PPDIS.Shared.Models
+@using Soil.Shared.Models
 @inject IJSRuntime JS
 @inject HttpClient Http
 @inject DialogService DialogService
@@ -493,6 +494,7 @@
 
 @code {
     private List<StockCardData> stock_list = new();
+    private List<QrCodeClass> qrCodeClasses = new();
     private List<StockCardData> FilteredEntries = new();
     [Parameter] public EventCallback OnFormSubmitted { get; set; }
     private bool isLoading = false;
@@ -540,6 +542,7 @@
     protected override async Task OnInitializedAsync()
     {
         stock_list = await Http.GetFromJsonAsync<List<StockCardData>>("api/Task/ViewStock") ?? new();
+        qrCodeClasses = await Http.GetFromJsonAsync<List<QrCodeClass>>("api/qrcode/view_qr") ?? new();
         await LoadReport();
     }
 

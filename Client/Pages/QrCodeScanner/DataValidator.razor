@@ -1,0 +1,277 @@
+﻿@page "/qrcode"
+@layout NoLayout
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@using System.Text.Json
+@using MongoDB.Driver
+@using Soil.Shared.Models
+<style>
+    .start-54 {
+        left: 54% !important;
+    }
+
+    .top-neg-5 {
+        top: -5px;
+    }
+
+    .sticky-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        background-color: #f0f0f0; /* Change this to your desired background color */
+        padding: 10px; /* Adjust the padding as needed */
+        width: 100vw;
+    }
+</style>
+
+<style>
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.5);
+        background: linear-gradient(0deg, rgba(255, 255, 255, 1), rgba(1, 1, 1, 1));
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: white;
+    }
+
+    #myVideo {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        min-width: 100%;
+        min-height: 100%;
+    }
+
+</style>
+
+
+
+
+
+
+<Laboratory @ref="_qRScanner" ScanResult="QRResult" />
+<center>
+    <div class="btn btn-dark  btn-lg" @onclick="@(()=>ShowScanner("DataValidator",""))">
+        <i class="fa-solid fa-camera"></i><span> Scan</span>
+    </div>
+</center>
+@code {
+    string Event;
+    string MenuClicked = "Scan";
+    bool showoverlay = false;
+    string overlaytext = "";
+    double currentRecord = 0;
+    double totalcount = 0;
+    string qr = "";
+    Laboratory _qRScanner;
+    [Inject] public HttpClient Http { get; set; }
+    [Inject] public NavigationManager Nav { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
+
+    IEnumerable<string> EventName = new List<string> { "Governor's Cup Profiling", "Caraga Regional Athletic Meet", "Sample for QR" };
+    List<(string storageId, string dataId)> StoredData = new List<(string, string)>();
+
+  
+    private async void QRResult((string, string, string) result)
+    {
+        try
+        {
+            var qrData = result.Item1;   // the actual scanned QR string
+            var field = result.Item2;    // maybe extra info (e.g., field name)
+            var extra = result.Item3;    // third part if needed
+
+            await _qRScanner.CloseAsync();
+
+            await HandleQrScan(qrData); // now passing the actual QR string
+        }
+        catch (Exception ex)
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "QR Error",
+                Detail = ex.Message,
+                Duration = 3000
+            });
+        }
+    }
+    private async void ShowScanner(string field,string source)
+    {
+        await _qRScanner.OpenScanner(field, source);
+        // await Task.Delay(1000);
+
+    }
+    
+private async Task HandleQrScan(string qrData)
+{
+    try
+    {
+        // 1️⃣ Deserialize QR payload
+        var qrPayload = JsonSerializer.Deserialize<QrCodeDto>(qrData);
+
+        if (qrPayload == null)
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Invalid QR",
+                Detail = "QR code JSON is invalid.",
+                Duration = 3000
+            });
+            return;
+        }
+
+        // 2️⃣ Verify QR against database
+        var verifyResponse = await Http.PostAsJsonAsync("api/qrcode/verify_qr", qrPayload);
+
+        if (!verifyResponse.IsSuccessStatusCode)
+        {
+            var msg = await verifyResponse.Content.ReadAsStringAsync();
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Verification Failed",
+                Detail = msg,
+                Duration = 3000
+            });
+            return;
+        }
+
+        bool isVerified = await verifyResponse.Content.ReadFromJsonAsync<bool>();
+
+        if (!isVerified)
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Scan Mismatch",
+                Detail = "QR data does not match database record.",
+                Duration = 3000
+            });
+            return;
+        }
+
+        // 3️⃣ Notify success
+        NotificationService?.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Scan Successful",
+            Detail = $"QR matches the record: {qrPayload.NameOf}",
+            Duration = 3000
+        });
+
+        // 4️⃣ Transfer record to req_table_view
+        var transferResponse = await Http.PostAsJsonAsync("api/qrcode/transfer_to_req_table", qrPayload);
+
+        if (!transferResponse.IsSuccessStatusCode)
+        {
+            var msg = await transferResponse.Content.ReadAsStringAsync();
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Transfer Failed",
+                Detail = msg,
+                Duration = 3000
+            });
+        }
+
+     
+    }
+    catch (Exception ex)
+    {
+        NotificationService?.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = "Error",
+            Detail = ex.Message,
+            Duration = 3000
+        });
+    }
+}
+
+
+
+
+
+
+
+
+    async Task ShowScannerDialog()
+    {
+        var result = await DialogService.OpenAsync<Laboratory>(
+            "QR Scanner",
+            new Dictionary<string, object>()
+            {
+                { "UseBuiltinDiv", false } // render Radzen-friendly body
+            },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = "900px",
+                Height = "600px"
+            });
+
+        if (result is ValueTuple<string, string, string> scan)
+        {
+            var (code, field, source) = scan;
+            Console.WriteLine($"Scanned: {code}, Field: {field}, Source: {source}");
+        }
+    }
+    
+    void OnDrag(System.Drawing.Point point)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
+
+        if (Settings == null)
+        {
+            Settings = new Stock.DialogSettings();
+        }
+
+        Settings.Left = $"{point.X}px";
+        Settings.Top = $"{point.Y}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    void OnResize(System.Drawing.Size size)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
+
+        if (Settings == null)
+        {
+            Settings = new Stock.DialogSettings();
+        }
+
+        Settings.Width = $"{size.Width}px";
+        Settings.Height = $"{size.Height}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+    
+    Stock.DialogSettings _settings;
+
+    public Stock.DialogSettings Settings
+    {
+        get { return _settings; }
+        set
+        {
+            if (_settings != value)
+            {
+                _settings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+    
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
+    }
+}

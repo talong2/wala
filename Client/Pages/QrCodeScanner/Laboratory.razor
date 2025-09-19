@@ -1,0 +1,299 @@
+﻿
+
+@using System.Diagnostics
+@using Soil.Shared.Models
+
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject IModalServices Modal
+
+
+
+<style>
+    body, html {
+        height: 100%;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f2f2f2;
+        color: #111111;
+        font-weight: bold; /* make all text bold by default */
+    }
+
+    .page-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        padding: 1rem;
+        background-color: #f2f2f2;
+    }
+
+    .container {
+        background-color: #f9f9f9;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 400px;
+        width: 100%;
+        border: 1px solid #e0e0e0;
+    }
+
+    h1 {
+        margin-bottom: 1.5rem;
+        font-size: 3rem; /* increased font size */
+        letter-spacing: 2px; /* more spacing for emphasis */
+        color: #111111;
+        font-weight: bold;
+    }
+
+    video {
+        width: 100%;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 2px solid #cccccc;
+    }
+
+    button, input[type=file] {
+        background-color: #111111;
+        color: #ffffff;
+        border: 1px solid #111111;
+        padding: 16px 28px; /* larger padding */
+        font-size: 1.2rem; /* larger font */
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 8px 4px;
+        min-width: 100px;
+        transition: all 0.2s ease;
+        font-weight: bold;
+        letter-spacing: 1px; /* subtle spacing */
+    }
+
+    button:hover:not(:disabled),
+    input[type=file]:hover {
+        background-color: #ffffff;
+        color: #111111;
+        border: 1px solid #111111;
+    }
+
+    button:disabled {
+        background-color: #e0e0e0;
+        color: #888888;
+        border: 1px solid #cccccc;
+        cursor: not-allowed;
+    }
+
+    input[type=file] {
+        display: block;
+        margin: 12px auto;
+        text-align: center;
+    }
+
+    p {
+        margin: 12px 0 8px 0;
+        font-size: 1.1rem; /* bigger text */
+        color: #333333;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+
+    input[type=file] {
+        max-width: 100%;
+    }
+    @@media (max-width: 480px) {
+        .container {
+            padding: 2rem 1rem;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+        }
+
+        button, input[type=file] {
+
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
+
+
+
+
+@if (UseBuiltinDiv)
+{
+   
+    
+    <div class="page-wrapper" @ref="barcodeScannerElement">
+        <div class="container">
+            <h1>QR Login</h1>
+
+            <video id="video"></video>
+     
+       
+            <button type="button" data-action="startButton">
+                Start Scan 
+            </button>
+            <div id="sourceSelectPanel" style="display:none; margin-top:1rem;">
+                <p>Select Camera:</p>
+                <select data-action="sourceSelect"></select>
+            </div>
+
+            <p>Or upload a QR/Barcode image:</p>
+            <input type="file" accept="image/*" data-action="fileInput" />
+        </div>
+    </div>
+}
+
+
+@code {
+
+    /// <summary>
+    /// 扫码按钮文本/Scan button title
+    /// </summary>
+    [Parameter]
+    public string ScanBtnTitle { get; set; } = "Scan";
+
+    /// <summary>
+    /// 复位按钮文本/Reset button title
+    /// </summary>
+    [Parameter]
+    public string ResetBtnTitle { get; set; } = "Reset";
+
+    /// <summary>
+    /// 关闭按钮文本/Close button title
+    /// </summary>
+    [Parameter]
+    public string CloseBtnTitle { get; set; } = "Close";
+
+    /// <summary>
+    /// 选择设备按钮文本/Select device button title
+    /// </summary>
+    [Parameter]
+    public string SelectDeviceBtnTitle { get; set; } = "Select";
+
+
+    /// <summary>
+    /// 扫码结果回调方法/Scan result callback method
+    /// </summary>
+    [Parameter]
+    public EventCallback<(string, string,string)> ScanResult { get; set; }
+
+    /// <summary>
+    /// 关闭扫码框回调方法/Close scan code callback method
+    /// </summary>
+    [Parameter]
+    public EventCallback Close { get; set; }
+
+    /// <summary>
+    /// 错误回调方法/Error callback method
+    /// </summary>
+    [Parameter]
+    public Func<string, Task> OnError { get; set; }
+
+    /// <summary>
+    /// 扫码结果/Scan result
+    /// </summary>
+    [Parameter]
+    public string Result { get; set; }
+
+    /// <summary>
+    /// 使用内置DIV/Use builtin Div
+    /// </summary>
+    [Parameter] public bool UseBuiltinDiv { get; set; } = true;
+
+    /// <summary>
+    /// 显示扫码框/Show scan box
+    /// </summary>
+    [Parameter]
+    [Obsolete]
+    public bool ShowScanBarcode { get; set; }
+
+    private IJSObjectReference module;
+    private DotNetObjectReference<Laboratory> objRef;
+
+    /// <summary>
+    ///
+    /// </summary>
+    public ElementReference barcodeScannerElement { get; set; }
+    private string Field;
+    private string Source;
+
+
+    
+    public async Task OpenScanner(string fieldname, string source)
+    {
+        try
+        {
+            Field = fieldname;
+            Source = source;
+            objRef = DotNetObjectReference.Create(this);
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./vendor/BarcodeScanner/lib/zxing/zxingjs1.2.js");
+            await module.InvokeVoidAsync("init", true, objRef, barcodeScannerElement, barcodeScannerElement.Id);
+            await Modal.Build("modal-barcode-scanner");
+        }
+        catch (Exception e)
+        {
+            if (OnError != null) await OnError.Invoke(e.Message);
+
+
+            Debug.WriteLine($"Error Message: {e.Message}");
+            Debug.WriteLine($"Stack Trace: {e.StackTrace}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task GetResult(string val)
+    {
+        await ScanResult.InvokeAsync((val, Field,Source));
+    }
+    //public async Task GetResult(string val) => await ScanResult.InvokeAsync(val, Field);
+
+    [JSInvokable]
+    public async Task CloseScan()
+    {
+        try
+        {
+            await Close.InvokeAsync();
+        }
+        catch { }
+    }
+
+    [JSInvokable]
+    public async Task GetError(string err)
+    {
+        if (OnError != null) await OnError.Invoke(err);
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        try
+        {
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("destroy", barcodeScannerElement.Id);
+                await module.DisposeAsync();
+            }
+            objRef?.Dispose();
+        }
+        catch { }
+    }
+
+    public async Task CloseAsync()
+    {
+        try
+        {
+            await Modal.Close("modal-barcode-scanner");
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("destroy", barcodeScannerElement.Id);
+                await module.DisposeAsync();
+            }
+            objRef?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+        }
+    }
+}
